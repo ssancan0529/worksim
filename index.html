@@ -232,4 +232,14 @@ function render(){
   a.querySelectorAll('[data-feel]').forEach(b=>b.onclick=()=>{S.feel=b.dataset.feel;render()});
   a.querySelectorAll('[data-chk]').forEach(b=>b.onchange=()=>{S.chk[+b.dataset.chk]=b.checked});
   a.querySelectorAll('[data-line]').forEach(b=>b.onclick=()=>{const n=+b.dataset.line;S.none=false;S.marks=S.marks.includes(n)?S.marks.filter(x=>x!==n):[...S.marks,n];render()});
-  a.querySelectorAll('[data-none]').forEach(b=>b.onclick=()=>{S.none=!
+  a.querySelectorAll('[data-none]').forEach(b=>b.onclick=()=>{S.none=!S.none;if(S.none)S.marks=[];render()});
+  a.querySelectorAll('[data-bind]').forEach(t=>t.oninput=()=>{S[t.dataset.bind]=t.value;const go=a.querySelector('[data-go]');if(go){if(t.dataset.bind==='code1')go.disabled=!S.code1.trim();if(t.dataset.bind==='why')go.disabled=!(S.marks.length||S.none||S.why.trim())}});
+  const cp=document.getElementById('cp');
+  if(cp)cp.onclick=async()=>{const t=document.getElementById('sum');try{await navigator.clipboard.writeText(t.value);cp.textContent='Copiado'}catch(e){t.select();cp.textContent='Selecciona y copia el texto'}};
+  const fin=document.getElementById('fin');
+  if(fin)fin.onclick=()=>{S.done=true;S.view='portal';render();window.scrollTo(0,0)};
+}
+render();
+</script>
+</body>
+</html>
