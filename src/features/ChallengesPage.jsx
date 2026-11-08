@@ -175,13 +175,38 @@ export default function ChallengesPage({
       <PageIntro
         eyebrow="WORKSIM / EXPLORADOR DE DESAFÍOS"
         title="Explora desafíos profesionales"
-        description="Descubre experiencias por profesión, área o habilidad. Explora todas las disciplinas aunque algunas aún estén en preparación."
-      >
-        <div className="role-card">
-          <span className="role-icon"><Icon name="sparkles" /></span>
-          <span><small>EXPERIENCIAS DISPONIBLES</small><strong>General y desarrollo de software</strong></span>
-        </div>
-      </PageIntro>
+        description="Elige un desafío disponible para practicar cómo contrastar una propuesta de IA con evidencia."
+      />
+
+      {!(isSearching && !categoryResults.length && !challengeResults.length && !plannedChallengeResults.length) && (
+        <section className="catalog-challenges" id="available-challenges" aria-live="polite">
+          <SectionTitle aside={
+            <span className="catalog-available-label"><i /> Solo experiencias iniciables</span>
+          }>
+            {showResults ? "Desafíos que coinciden" : "Desafíos disponibles"}
+          </SectionTitle>
+          {showResults ? (
+            challengeResults.length > 0 ? (
+              <div className="catalog-challenge-list">
+                {challengeResults.map(renderChallenge)}
+              </div>
+            ) : isSearching && plannedChallengeResults.length > 0 ? (
+              <p className="catalog-no-live-results">Los desafíos planificados que coinciden aparecen en los resultados de búsqueda; ninguno permite iniciar una prueba todavía.</p>
+            ) : (
+              <EmptyResults
+                query={query}
+                unavailableArea={filters.area !== "all"
+                  && PROFESSIONAL_CATEGORIES.find((category) => category.id === filters.area)?.status !== "available"}
+                onClear={clearCatalog}
+              />
+            )
+          ) : (
+            <div className="catalog-challenge-list">
+              {AVAILABLE_CHALLENGES.map(renderChallenge)}
+            </div>
+          )}
+        </section>
+      )}
 
       <section className="catalog-search-panel" aria-labelledby="catalog-search-title">
         <div className="catalog-search-copy">
@@ -197,7 +222,7 @@ export default function ChallengesPage({
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Ej. backend, diseño UX, análisis de datos..."
-            aria-controls="catalog-results"
+            aria-controls="available-challenges catalog-results"
           />
           {query && (
             <button type="button" aria-label="Borrar búsqueda" onClick={() => setQuery("")}>
@@ -254,7 +279,7 @@ export default function ChallengesPage({
           ) : (
             <p className="catalog-no-live-results">
               {challengeResults.length
-                ? "No hay áreas relacionadas; revisa el desafío disponible a continuación."
+                ? "No hay áreas relacionadas; revisa los desafíos disponibles al inicio del explorador."
                 : "No hay áreas disponibles para esta búsqueda. Estos desafíos están planificados, pero aún no se pueden iniciar."}
             </p>
           )}
@@ -288,36 +313,6 @@ export default function ChallengesPage({
             ))}
           </div>
           {selectedCategory && <CategoryDetail category={selectedCategory} />}
-        </section>
-      )}
-
-      {!(isSearching && !categoryResults.length && !challengeResults.length && !plannedChallengeResults.length) && (
-        <section className="catalog-challenges" id="available-challenges">
-          <SectionTitle aside={
-            <span className="catalog-available-label"><i /> Solo experiencias iniciables</span>
-          }>
-            {showResults ? "Desafíos que coinciden" : "Desafío destacado"}
-          </SectionTitle>
-          {showResults ? (
-            challengeResults.length > 0 ? (
-              <div className="catalog-challenge-list">
-                {challengeResults.map(renderChallenge)}
-              </div>
-            ) : isSearching && plannedChallengeResults.length > 0 ? (
-              <p className="catalog-no-live-results">Los desafíos planificados que coinciden aparecen arriba; ninguno permite iniciar una prueba todavía.</p>
-            ) : (
-              <EmptyResults
-                query={query}
-                unavailableArea={filters.area !== "all"
-                  && PROFESSIONAL_CATEGORIES.find((category) => category.id === filters.area)?.status !== "available"}
-                onClear={clearCatalog}
-              />
-            )
-          ) : (
-            <div className="catalog-challenge-list">
-              {AVAILABLE_CHALLENGES.map(renderChallenge)}
-            </div>
-          )}
         </section>
       )}
 
