@@ -73,7 +73,9 @@ npm install
 npm run dev
 ```
 
-Para generar la versión de producción, ejecuta `npm run build`. El flujo de seis etapas y el caso de Adopta+ siguen las pantallas de `screens.html`; el análisis, las hipótesis, el dictamen y la reflexión se guardan en el navegador. El historial y la evidencia se pueden consultar y exportar como JSON.
+Para generar la versión de producción, ejecuta `npm run build`. La plantilla editable está en `src/index.html`. GitHub Pages publica desde la raíz de `main`: copia `dist/index.html` a la raíz y coloca los archivos de `dist/assets/` en `assets/` en el mismo commit.
+
+El flujo de seis etapas y el caso de Adopta+ siguen las pantallas de `screens.html`; el análisis, las hipótesis, el dictamen y la reflexión se guardan en el navegador. El historial y la evidencia se pueden consultar y exportar como JSON.
 
 El sandbox realiza comprobaciones heurísticas sobre el texto del código editado; no ejecuta Python, no modifica bases de datos y no sustituye pruebas reales. El informe muestra los resultados encontrados y recomendaciones relacionadas, sin asignar una calificación automática.
 
