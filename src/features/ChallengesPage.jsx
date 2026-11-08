@@ -178,36 +178,6 @@ export default function ChallengesPage({
         description="Elige un desafío disponible para practicar cómo contrastar una propuesta de IA con evidencia."
       />
 
-      {!(isSearching && !categoryResults.length && !challengeResults.length && !plannedChallengeResults.length) && (
-        <section className="catalog-challenges" id="available-challenges" aria-live="polite">
-          <SectionTitle aside={
-            <span className="catalog-available-label"><i /> Solo experiencias iniciables</span>
-          }>
-            {showResults ? "Desafíos que coinciden" : "Desafíos disponibles"}
-          </SectionTitle>
-          {showResults ? (
-            challengeResults.length > 0 ? (
-              <div className="catalog-challenge-list">
-                {challengeResults.map(renderChallenge)}
-              </div>
-            ) : isSearching && plannedChallengeResults.length > 0 ? (
-              <p className="catalog-no-live-results">Los desafíos planificados que coinciden aparecen en los resultados de búsqueda; ninguno permite iniciar una prueba todavía.</p>
-            ) : (
-              <EmptyResults
-                query={query}
-                unavailableArea={filters.area !== "all"
-                  && PROFESSIONAL_CATEGORIES.find((category) => category.id === filters.area)?.status !== "available"}
-                onClear={clearCatalog}
-              />
-            )
-          ) : (
-            <div className="catalog-challenge-list">
-              {AVAILABLE_CHALLENGES.map(renderChallenge)}
-            </div>
-          )}
-        </section>
-      )}
-
       <section className="catalog-search-panel" aria-labelledby="catalog-search-title">
         <div className="catalog-search-copy">
           <span className="eyebrow">ENCUENTRA TU PRÓXIMO RETO</span>
@@ -250,6 +220,36 @@ export default function ChallengesPage({
         active={hasFilters}
       />
 
+      {!(isSearching && !categoryResults.length && !challengeResults.length && !plannedChallengeResults.length) && (
+        <section className="catalog-challenges" id="available-challenges" aria-live="polite">
+          <SectionTitle aside={
+            <span className="catalog-available-label"><i /> Solo experiencias iniciables</span>
+          }>
+            {showResults ? "Desafíos que coinciden" : "Desafíos disponibles"}
+          </SectionTitle>
+          {showResults ? (
+            challengeResults.length > 0 ? (
+              <div className="catalog-challenge-list">
+                {challengeResults.map(renderChallenge)}
+              </div>
+            ) : isSearching && plannedChallengeResults.length > 0 ? (
+              <p className="catalog-no-live-results">Los desafíos planificados que coinciden aparecen en los resultados de búsqueda; ninguno permite iniciar una prueba todavía.</p>
+            ) : (
+              <EmptyResults
+                query={query}
+                unavailableArea={filters.area !== "all"
+                  && PROFESSIONAL_CATEGORIES.find((category) => category.id === filters.area)?.status !== "available"}
+                onClear={clearCatalog}
+              />
+            )
+          ) : (
+            <div className="catalog-challenge-list">
+              {AVAILABLE_CHALLENGES.map(renderChallenge)}
+            </div>
+          )}
+        </section>
+      )}
+
       {isSearching && (
         <section className="catalog-results" id="catalog-results" aria-live="polite">
           <SectionTitle aside={<span className="eyebrow">{categoryResults.length} área{categoryResults.length === 1 ? "" : "s"} relacionada{categoryResults.length === 1 ? "" : "s"}</span>}>
@@ -279,7 +279,7 @@ export default function ChallengesPage({
           ) : (
             <p className="catalog-no-live-results">
               {challengeResults.length
-                ? "No hay áreas relacionadas; revisa los desafíos disponibles al inicio del explorador."
+                ? "No hay áreas relacionadas; revisa los desafíos que aparecen debajo de los filtros."
                 : "No hay áreas disponibles para esta búsqueda. Estos desafíos están planificados, pero aún no se pueden iniciar."}
             </p>
           )}
