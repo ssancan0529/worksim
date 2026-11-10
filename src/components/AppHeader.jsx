@@ -8,12 +8,13 @@ function Navigation({ steps, activeStep, maxUnlockedStep, onNavigate, mobile = f
       className={mobile ? "mobile-step-nav" : "step-nav"}
       aria-label="Etapas del desafío"
     >
-      {steps.map((step, index) => {
+      {steps.slice(1).map((step, position) => {
+        const index = position + 1;
         const locked = index > maxUnlockedStep;
         const current = activeStep === index;
         return (
           <div className={mobile ? "mobile-step-item" : "step-nav-item"} key={step.path}>
-            {!mobile && index > 0 && <span className="nav-dash" aria-hidden="true">—</span>}
+            {!mobile && index > 1 && <span className="nav-dash" aria-hidden="true">—</span>}
             <button
               className={
                 mobile
@@ -22,14 +23,14 @@ function Navigation({ steps, activeStep, maxUnlockedStep, onNavigate, mobile = f
               }
               onClick={() => onNavigate(index)}
               aria-current={current ? "step" : undefined}
-              aria-label={`${index + 1}. ${step.label}${locked ? " (bloqueado)" : ""}`}
+              aria-label={`${index}. ${step.label}${locked ? " (bloqueado)" : ""}`}
               disabled={locked}
             >
               {mobile ? (
-                <>{index + 1}. {step.label}</>
+                <>{index}. {step.label}</>
               ) : (
                 <>
-                  <span className="nav-number">{index < maxUnlockedStep ? <Icon name="check" size={12} /> : index + 1}</span>
+                  <span className="nav-number">{index < maxUnlockedStep ? <Icon name="check" size={12} /> : index}</span>
                   <span>{step.label}</span>
                 </>
               )}
@@ -62,13 +63,13 @@ export default function AppHeader({
         <button
           className="brand"
           onClick={onBrandClick}
-          aria-label={`Ir al inicio de ${workspace.label}`}
+          aria-label={activeStep > 0 ? "Volver a desafíos" : `Ir al inicio de ${workspace.label}`}
         >
           <span className="brand-name">WORKSIM</span>
           <span className="brand-slash">/</span>
           <span className="brand-section">
             {activeStep > 0
-              ? steps[activeStep].label
+              ? "Volver a desafíos"
               : workspace.sections.find((section) => section.id === workspaceSection)?.label}
           </span>
         </button>

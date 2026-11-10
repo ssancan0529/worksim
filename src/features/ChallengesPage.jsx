@@ -4,6 +4,7 @@ import Icon from "../components/Icon";
 import PageIntro from "../components/PageIntro";
 import SectionTitle from "../components/SectionTitle";
 import {
+  AVAILABLE_CATEGORIES,
   AVAILABLE_CHALLENGES,
   CATALOG_STATUS,
   FEATURED_UPCOMING_CATEGORY_IDS,
@@ -29,7 +30,7 @@ const INITIAL_FILTERS = {
   competency: "all",
 };
 
-const QUICK_SEARCHES = ["Pensamiento crítico", "Backend con Python", "Diseño UX"];
+const QUICK_SEARCHES = ["Pensamiento crítico", "Python", "SQL"];
 
 function CategoryDetail({ category }) {
   const status = CATALOG_STATUS[category.status];
@@ -114,6 +115,7 @@ export default function ChallengesPage({
   const [query, setQuery] = useState("");
   const [filters, setFilters] = useState(INITIAL_FILTERS);
   const [selectedCategoryId, setSelectedCategoryId] = useState(null);
+  const [previewLocation, setPreviewLocation] = useState("categories");
   const categoryResults = useMemo(
     () => searchCategories(PROFESSIONAL_CATEGORIES, query),
     [query],
@@ -132,7 +134,7 @@ export default function ChallengesPage({
   const selectedCategory = PROFESSIONAL_CATEGORIES.find((category) => category.id === selectedCategoryId);
   const upcomingCategories = FEATURED_UPCOMING_CATEGORY_IDS
     .map((id) => PROFESSIONAL_CATEGORIES.find((category) => category.id === id))
-    .filter(Boolean);
+    .filter((category) => category && !AVAILABLE_CATEGORIES.some((available) => available.id === category.id));
   const completed = Object.values(progress).some((item) => item.completed);
 
   function getProgress(challenge) {
@@ -153,13 +155,17 @@ export default function ChallengesPage({
     );
   }
 
-  function selectCategory(category) {
+  function selectCategory(category, location = "categories") {
     const deselect = selectedCategoryId === category.id;
     setSelectedCategoryId(deselect ? null : category.id);
-    setFilters((current) => ({ ...current, area: deselect ? "all" : category.id }));
+    setPreviewLocation(location);
+    if (AVAILABLE_CATEGORIES.some((available) => available.id === category.id)) {
+      setFilters((current) => ({ ...current, area: deselect ? "all" : category.id }));
+    }
   }
 
   function changeFilters(nextFilters) {
+    setPreviewLocation("categories");
     setFilters(nextFilters);
     setSelectedCategoryId(nextFilters.area === "all" ? null : nextFilters.area);
   }
@@ -191,7 +197,7 @@ export default function ChallengesPage({
             type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Ej. backend, diseño UX, análisis de datos..."
+            placeholder="Ej. SQL, Python, pensamiento crítico..."
             aria-controls="available-challenges catalog-results"
           />
           {query && (
@@ -293,7 +299,7 @@ export default function ChallengesPage({
               </div>
             </div>
           )}
-          {selectedCategory && <CategoryDetail category={selectedCategory} />}
+          {selectedCategory && previewLocation === "categories" && <CategoryDetail category={selectedCategory} />}
         </section>
       )}
 
@@ -312,7 +318,7 @@ export default function ChallengesPage({
               />
             ))}
           </div>
-          {selectedCategory && <CategoryDetail category={selectedCategory} />}
+          {selectedCategory && previewLocation === "categories" && <CategoryDetail category={selectedCategory} />}
         </section>
       )}
 
@@ -327,10 +333,11 @@ export default function ChallengesPage({
               <UpcomingAreaRow
                 key={category.id}
                 category={category}
-                onSelect={selectCategory}
+                onSelect={(category) => selectCategory(category, "upcoming")}
               />
             ))}
           </div>
+          {selectedCategory && previewLocation === "upcoming" && <CategoryDetail category={selectedCategory} />}
           <p className="catalog-upcoming-note">Negocios, administración y ciencias e ingeniería también forman parte del catálogo explorable.</p>
         </section>
       )}

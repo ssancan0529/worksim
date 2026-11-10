@@ -31,7 +31,7 @@ export default function InvestigationPage({
   return (
     <>
       <PageIntro
-        eyebrow="ETAPA 4 DE 6 · AUDITORÍA DE SOLUCIÓN"
+        eyebrow="ETAPA 3 DE 5 · AUDITORÍA DE SOLUCIÓN"
         title="Investiga la solución generada por IA"
         description="Contrasta el código con el encargo. Formula hipótesis y busca evidencia antes de decidir si la propuesta cumple los requisitos."
       >

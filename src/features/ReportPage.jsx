@@ -21,7 +21,7 @@ export default function ReportPage({
   return (
     <>
       <PageIntro
-        eyebrow="ETAPA 6 DE 6 · TU APRENDIZAJE"
+        eyebrow="ETAPA 5 DE 5 · TU APRENDIZAJE"
         title={`Informe de desempeño profesional: Desafío #${CHALLENGE.ticket} ${draft.completedAt ? "completado" : ""}`}
         description="Retroalimentación formativa basada en tus acciones, pruebas y justificación. No es una calificación ni una certificación de competencias."
       >

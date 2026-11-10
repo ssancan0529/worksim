@@ -27,7 +27,7 @@ export default function TestingPage({
   return (
     <>
       <PageIntro
-        eyebrow="ETAPA 5 DE 6 · EVIDENCIA Y DICTAMEN"
+        eyebrow="ETAPA 4 DE 5 · EVIDENCIA Y DICTAMEN"
         title="Pruebas y decisión"
         description="Contrasta la propuesta con casos de prueba y registra un dictamen técnico respaldado por sus resultados."
       >

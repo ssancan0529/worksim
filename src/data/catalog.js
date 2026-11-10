@@ -1,3 +1,4 @@
+import { MAYRA_CHALLENGE } from "./mayra.js";
 import {
   CHALLENGE,
   GENERAL_CHALLENGE,
@@ -39,7 +40,7 @@ export const PROFESSIONAL_CATEGORIES = [
     id: "data-ai",
     name: "Datos e inteligencia artificial",
     icon: "brain",
-    status: "development",
+    status: "available",
     description: "Exploración de datos, interpretación de resultados y evaluación de sistemas de IA.",
     roles: ["Análisis de datos", "Ciencia de datos", "Evaluación de IA"],
     skills: ["SQL", "estadística", "calidad de datos", "modelos de IA"],
@@ -78,6 +79,7 @@ export const PROFESSIONAL_CATEGORIES = [
 ];
 
 export const AVAILABLE_CHALLENGES = [
+  MAYRA_CHALLENGE,
   {
     ...GENERAL_CHALLENGE,
     categoryId: "general",
@@ -115,7 +117,7 @@ export const PLANNED_CHALLENGES = UPCOMING_CHALLENGES.map((challenge) => ({
   status: "upcoming",
 }));
 
-export const FEATURED_UPCOMING_CATEGORY_IDS = ["design", "data-ai", "communication"];
+export const FEATURED_UPCOMING_CATEGORY_IDS = ["design", "communication"];
 
 export const CATALOG_STATUS = {
   available: { label: "Disponible", description: "Ya puedes iniciar un desafío en esta área." },
@@ -123,7 +125,13 @@ export const CATALOG_STATUS = {
   development: { label: "En desarrollo", description: "Estamos preparando experiencias para esta área." },
 };
 
-export const DIFFICULTIES = ["Principiante", "Básico", "Intermedio", "Avanzado"];
+export const AVAILABLE_CATEGORIES = PROFESSIONAL_CATEGORIES.filter((category) =>
+  AVAILABLE_CHALLENGES.some((challenge) => challenge.categoryId === category.id),
+);
+
+export const DIFFICULTIES = ["Principiante", "Básico", "Intermedio", "Avanzado"].filter((level) =>
+  AVAILABLE_CHALLENGES.some((challenge) => challenge.level === level),
+);
 export const COMPETENCY_TYPES = [
-  ...new Set(PROFESSIONAL_CATEGORIES.flatMap((category) => category.competencies)),
+  ...new Set(AVAILABLE_CHALLENGES.flatMap((challenge) => challenge.competencyType)),
 ].sort((first, second) => first.localeCompare(second, "es"));

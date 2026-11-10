@@ -32,8 +32,10 @@ export function normalizeDraft(value) {
     : [];
   const observationById = new Map(savedObservations.map((item) => [item.claimId, item]));
 
+  const kind = raw.kind === "general" || raw.kind === "sql" ? raw.kind : "technical";
+
   return {
-    kind: raw.kind === "general" ? "general" : "technical",
+    kind,
     started: raw.started === true,
     briefingRead: raw.briefingRead === true,
     analysis: {
@@ -48,7 +50,7 @@ export function normalizeDraft(value) {
       reviewed: investigation.reviewed === true,
     },
     testing: {
-      code: text(testing.code) || (raw.kind === "general" ? "" : createInitialDraft().testing.code),
+      code: text(testing.code) || (kind === "technical" ? createInitialDraft().testing.code : ""),
       ran: testing.ran === true,
       results: Array.isArray(testing.results) ? testing.results : [],
       verdict: text(testing.verdict),
@@ -62,6 +64,13 @@ export function normalizeDraft(value) {
         })
         : savedObservations,
       omission: text(testing.omission),
+      ...(kind === "sql" ? {
+        rows: Array.isArray(testing.rows)
+          ? testing.rows.filter((row) => Array.isArray(row) && row.length === 5
+            && Number.isInteger(row[0]) && row.slice(1, 4).every((cell) => typeof cell === "string")
+            && Number.isFinite(row[4]))
+          : [],
+      } : {}),
     },
     reflection: {
       blindSpot: text(reflection.blindSpot),

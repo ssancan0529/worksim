@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  AVAILABLE_CATEGORIES,
   AVAILABLE_CHALLENGES,
+  COMPETENCY_TYPES,
+  DIFFICULTIES,
   PLANNED_CHALLENGES,
   PROFESSIONAL_CATEGORIES,
 } from "../data/catalog.js";
@@ -66,4 +69,18 @@ test("challenge facets combine area, difficulty, duration and competence", () =>
   assert.equal(filterChallenges(AVAILABLE_CHALLENGES, nonMatchingFilters).length, 0);
   assert.equal(hasActiveCatalogFilters(matchingFilters), true);
   assert.equal(hasActiveCatalogFilters(noFilters), false);
+});
+
+
+test("catalog filter options only include areas, levels and competencies with available challenges", () => {
+  assert.deepEqual(
+    AVAILABLE_CATEGORIES.map((category) => category.id).sort(),
+    [...new Set(AVAILABLE_CHALLENGES.map((challenge) => challenge.categoryId))].sort(),
+  );
+  for (const competency of COMPETENCY_TYPES) {
+    assert.ok(filterChallenges(AVAILABLE_CHALLENGES, { ...noFilters, competency }).length > 0);
+  }
+  for (const difficulty of DIFFICULTIES) {
+    assert.ok(filterChallenges(AVAILABLE_CHALLENGES, { ...noFilters, difficulty }).length > 0);
+  }
 });

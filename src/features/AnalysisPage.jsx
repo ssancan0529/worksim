@@ -14,7 +14,7 @@ export default function AnalysisPage({ analysis, onChange, onBack, onContinue })
   return (
     <>
       <PageIntro
-        eyebrow="ETAPA 3 DE 6 · RAZONAMIENTO INDEPENDIENTE"
+        eyebrow="ETAPA 2 DE 5 · RAZONAMIENTO INDEPENDIENTE"
         title="Registro de análisis técnico autónomo"
         description="Registra tu razonamiento antes de inspeccionar la solución propuesta por la IA. Tu análisis inicial quedará guardado para contrastarlo con la evidencia."
       />

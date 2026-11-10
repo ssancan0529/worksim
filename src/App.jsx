@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { getMayraStep, MAYRA_CHALLENGE, MAYRA_STEPS } from "./data/mayra";
+import MayraChallengePage from "./features/MayraChallengePage";
 import AppHeader from "./components/AppHeader";
 import StatusNotice from "./components/StatusNotice";
 import {
@@ -41,13 +43,23 @@ function loadThemePreference() {
 }
 
 function createDraftForChallenge(challengeId) {
+  if (challengeId === MAYRA_CHALLENGE.id) {
+    const draft = createInitialDraft();
+    return { ...draft, kind: "sql", testing: { ...draft.testing, code: "", rows: [] } };
+  }
   return challengeId === GENERAL_CHALLENGE.id
     ? createInitialGeneralDraft()
     : createInitialDraft();
 }
 
 function getChallenge(challengeId) {
+  if (challengeId === MAYRA_CHALLENGE.id) return MAYRA_CHALLENGE;
   return challengeId === GENERAL_CHALLENGE.id ? GENERAL_CHALLENGE : CHALLENGE;
+}
+
+function stepsForChallenge(challengeId) {
+  if (challengeId === MAYRA_CHALLENGE.id) return MAYRA_STEPS;
+  return challengeId === GENERAL_CHALLENGE.id ? GENERAL_STEPS : STEPS;
 }
 
 function createHistoryRecord(challenge, draft) {
@@ -58,7 +70,9 @@ function createHistoryRecord(challenge, draft) {
     title: challenge.title,
     ticket: challenge.ticket,
     completedAt,
-    verdict: verdictLabel(draft.testing.verdict),
+    verdict: challenge.id === MAYRA_CHALLENGE.id
+      ? { accept: "Aceptar", modify: "Modificar", reject: "Rechazar" }[draft.testing.verdict]
+      : verdictLabel(draft.testing.verdict),
     passed: draft.testing.results.filter((result) => result.passed).length,
     total: draft.testing.results.length,
     draft: { ...draft, completedAt },
@@ -73,7 +87,7 @@ export default function App() {
   const [history, setHistory] = useState(initialState.history);
   const [workspaceSection, setWorkspaceSection] = useState(workspace.defaultSection);
   const [activeChallengeId, setActiveChallengeId] = useState(() => (
-    [CHALLENGE.id, GENERAL_CHALLENGE.id].includes(initialState.activeChallengeId)
+    [CHALLENGE.id, GENERAL_CHALLENGE.id, MAYRA_CHALLENGE.id].includes(initialState.activeChallengeId)
       ? initialState.activeChallengeId
       : CHALLENGE.id
   ));
@@ -84,9 +98,10 @@ export default function App() {
   const [theme, setTheme] = useState(loadThemePreference);
   const activeChallenge = getChallenge(activeChallengeId);
   const isGeneral = activeChallengeId === GENERAL_CHALLENGE.id;
-  const steps = isGeneral ? GENERAL_STEPS : STEPS;
+  const isMayra = activeChallengeId === MAYRA_CHALLENGE.id;
+  const steps = stepsForChallenge(activeChallengeId);
   const draft = drafts[activeChallengeId] || createDraftForChallenge(activeChallengeId);
-  const maxUnlockedStep = getUnlockedStep(draft);
+  const maxUnlockedStep = isMayra ? getMayraStep(draft) : getUnlockedStep(draft);
 
   const setDraft = (update) => {
     const challengeId = activeChallengeId;
@@ -189,6 +204,10 @@ export default function App() {
     const selectedDraft = drafts[challengeId] || createDraftForChallenge(challengeId);
     setActiveChallengeId(challengeId);
     if (selectedDraft.started && !selectedDraft.completedAt) {
+      if (challengeId === MAYRA_CHALLENGE.id) {
+        moveTo(getMayraStep(selectedDraft));
+        return;
+      }
       const resumeAt = challengeId === GENERAL_CHALLENGE.id
         ? selectedDraft.testing.ran
           ? 5
@@ -421,7 +440,9 @@ export default function App() {
       challenge: activeChallenge,
       exportedAt: new Date().toISOString(),
       draft,
-      disclaimer: isGeneral
+      disclaimer: isMayra
+        ? "La consulta se ejecutó en SQLite con datos ficticios."
+        : isGeneral
         ? "Prototipo educativo; la retroalimentación se calcula a partir de una simulación guiada."
         : "Prototipo educativo; las comprobaciones del sandbox son simuladas.",
     };
@@ -458,7 +479,7 @@ export default function App() {
       return;
     }
     setActiveChallengeId(challengeId);
-    moveTo(challengeId === GENERAL_CHALLENGE.id ? GENERAL_STEPS.length - 1 : STEPS.length - 1);
+    moveTo(stepsForChallenge(challengeId).length - 1);
   };
 
   const progress = Object.fromEntries(
@@ -472,6 +493,18 @@ export default function App() {
   );
 
   const currentPage = () => {
+    if (isMayra && activeStep > 0) {
+      return <MayraChallengePage
+        step={activeStep}
+        draft={draft}
+        onUpdate={setDraft}
+        onBack={() => moveTo(activeStep - 1)}
+        onContinue={() => moveTo(activeStep + 1)}
+        onFinish={finishChallenge}
+        onHome={() => moveTo(0)}
+        onExport={exportEvidence}
+      />;
+    }
     switch (activeStep) {
       case 0:
         if (workspaceSection === "explorer") {
@@ -614,7 +647,7 @@ export default function App() {
         workspaceSection={workspaceSection}
         onWorkspaceSectionChange={changeWorkspaceSection}
         steps={steps}
-        profileName={activeStep > 0 && isGeneral ? "Participante" : workspace.profileName}
+        profileName={activeStep > 0 && (isGeneral || isMayra) ? "Participante" : workspace.profileName}
         profileRole={activeStep > 0 ? activeChallenge.role : workspace.profileRole}
       />
       <main className={activeStep > 0 ? "page-shell practice-page" : "page-shell"}>
