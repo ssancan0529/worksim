@@ -1,3 +1,4 @@
+import PythonExecution from "./PythonExecution";
 import { REQUIREMENTS } from "../data/scenario";
 import ActionButton from "../components/ActionButton";
 import Field from "../components/Field";
@@ -43,15 +44,15 @@ export default function TestingPage({
         <section className="content-card sandbox">
           <div className="panel-heading">
             <div><span className="eyebrow">SANDBOX DE VALIDACIÓN</span><h2>Pruebas controladas</h2></div>
-            <span className="simulation-label"><i /> No ejecuta código real</span>
+            <span className="simulation-label"><i /> Python + revisión estática</span>
           </div>
-          <p className="muted">La suite aplica comprobaciones heurísticas al texto del código. No ejecuta Python, no modifica bases de datos y no sustituye pruebas reales.</p>
+          <p className="muted">Edita la función y ejecútala para observar su salida. También puedes revisar las señales que detecta la suite estática.</p>
           <div className="code-toolbar test-file">
             <span><Icon name="code" size={15} /> pets_controller.py</span>
             <span><Icon name="file" size={15} /> suite simulada · {testing.runs.length} ejecuciones</span>
             <button className="text-button" onClick={onResetCode}><Icon name="reset" size={14} /> Restaurar propuesta IA</button>
           </div>
-          <label className="editor-label" htmlFor="sandbox-code">Código para inspección heurística</label>
+          <label className="editor-label" htmlFor="sandbox-code">Código Python</label>
           <textarea
             id="sandbox-code"
             className="sandbox-input"
@@ -60,7 +61,10 @@ export default function TestingPage({
             spellCheck={false}
             rows={12}
           />
-          <ActionButton onClick={onRun} icon="play">Ejecutar suite simulada</ActionButton>
+          <PythonExecution code={testing.code} />
+          <h3>Revisión estática de requisitos</h3>
+          <p className="field-hint">Estas comprobaciones buscan patrones en el texto del código. Sus resultados alimentan el informe del reto.</p>
+          <ActionButton variant="secondary" onClick={onRun} icon="play">Ejecutar revisión estática</ActionButton>
 
           {testing.ran ? (
             <div className="test-results" aria-live="polite">
