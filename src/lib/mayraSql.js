@@ -43,3 +43,29 @@ export async function runMayraQuery() {
     db.close();
   }
 }
+
+export function runMayraSql(query) {
+  return new Promise((resolve, reject) => {
+    const worker = new Worker(new URL("./mayraSql.worker.js", import.meta.url));
+    const timeout = setTimeout(() => {
+      worker.terminate();
+      reject(new Error("La consulta superó el tiempo de ejecución. Simplifícala y vuelve a intentarlo."));
+    }, 10000);
+
+    function finish() {
+      clearTimeout(timeout);
+      worker.terminate();
+    }
+
+    worker.onmessage = ({ data }) => {
+      finish();
+      if (data.error) reject(new Error(data.error));
+      else resolve(data.results);
+    };
+    worker.onerror = () => {
+      finish();
+      reject(new Error("No se pudo iniciar SQLite. Vuelve a intentarlo."));
+    };
+    worker.postMessage(query);
+  });
+}

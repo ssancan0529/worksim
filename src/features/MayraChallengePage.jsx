@@ -5,7 +5,7 @@ import Field from "../components/Field";
 import PageActions from "../components/PageActions";
 import PageIntro from "../components/PageIntro";
 import { AI_QUERY, EXPECTED_ROWS, MAYRA_CHALLENGE, MAYRA_STEPS, TRANSACTIONS } from "../data/mayra";
-import { runMayraQuery } from "../lib/mayraSql";
+import { runMayraQuery, runMayraSql } from "../lib/mayraSql";
 
 function TransactionTable({ rows, caption }) {
   return (
@@ -21,6 +21,61 @@ function TransactionTable({ rows, caption }) {
       </table>
       {rows.length === 0 && <p className="muted">La consulta devolvió cero filas.</p>}
     </div>
+  );
+}
+
+function SqlWorkspace({ code, onChange }) {
+  const [running, setRunning] = useState(false);
+  const [results, setResults] = useState(null);
+  const [error, setError] = useState("");
+  const [executedQuery, setExecutedQuery] = useState("");
+
+  async function execute() {
+    setRunning(true);
+    setError("");
+    setResults(null);
+    const query = code;
+    try {
+      setResults(await runMayraSql(query));
+      setExecutedQuery(query);
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setRunning(false);
+    }
+  }
+
+  return (
+    <section className="sql-workspace" aria-labelledby="sql-workspace-title">
+      <h3 id="sql-workspace-title">Prueba tu propia consulta SQL</h3>
+      <p>Escribe o modifica una consulta sobre la tabla <code>transacciones</code>. Sus columnas son <code>id</code>, <code>ciudad</code>, <code>tipo</code>, <code>estado</code> y <code>monto</code>.</p>
+      <Field id="mayra-sql-editor" label="Tu consulta SQL" value={code} onChange={onChange} rows={7} placeholder="SELECT * FROM transacciones;" />
+      <div className="sql-workspace-actions">
+        <ActionButton variant="secondary" disabled={running} onClick={() => onChange(AI_QUERY)}>Cargar consulta de IA</ActionButton>
+        <ActionButton disabled={running || !code.trim()} onClick={execute} icon="play">{running ? "Ejecutando…" : "Ejecutar mi consulta"}</ActionButton>
+      </div>
+      <p className="field-hint">Las consultas se ejecutan sobre los datos ficticios del reto, en modo de lectura.</p>
+      <div aria-live="polite" aria-busy={running}>
+        {error && <p role="alert">Error de SQL · {error}</p>}
+        {results && (
+          <>
+            <p><strong>Resultado de tu consulta</strong>{executedQuery !== code && " · Editaste el SQL. Ejecútalo para actualizar el resultado."}</p>
+            {results.length === 0 && <p>La consulta devolvió cero filas.</p>}
+            {results.map((result, index) => (
+              <div className="table-scroll" key={index}>
+                <table>
+                  <caption>Resultado {index + 1} · {result.values.length} fila(s)</caption>
+                  <thead><tr>{result.columns.map((column, columnIndex) => <th scope="col" key={columnIndex}>{column}</th>)}</tr></thead>
+                  <tbody>{result.values.map((row, rowIndex) => (
+                    <tr key={rowIndex}>{row.map((value, columnIndex) => <td key={columnIndex}>{value === null ? "NULL" : String(value)}</td>)}</tr>
+                  ))}</tbody>
+                </table>
+              </div>
+            ))}
+          </>
+        )}
+      </div>
+    </section>
   );
 }
 
@@ -135,6 +190,9 @@ export default function MayraChallengePage({
               }))} rows={3} required />
             </>
           )}
+          <SqlWorkspace code={testing.code} onChange={(code) => onUpdate((current) => ({
+            ...current, testing: { ...current.testing, code },
+          }))} />
           <PageActions>
             <ActionButton variant="secondary" disabled={running} onClick={onBack}>Volver a la corrida</ActionButton>
             {testing.ran && <ActionButton disabled={!ready} onClick={onFinish} icon="arrow-right">Guardar decisión y ver informe</ActionButton>}

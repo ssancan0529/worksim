@@ -823,3 +823,9 @@ textarea::placeholder { color: #829187; }
 .practice-page .page-actions .primary { box-shadow: 0 3px 8px rgb(0 0 0 / 12%); }
 .practice-page .page-actions .primary:disabled { box-shadow: none; }
 .practice-page .page-actions .secondary { background: transparent; box-shadow: none; }
+
+.sql-workspace { margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--line); }
+.sql-workspace h3 { font-size: 20px; }
+.sql-workspace textarea { font-family: var(--mono); font-size: 16px; }
+.sql-workspace-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
+.sql-workspace .table-scroll { margin-top: 16px; }
