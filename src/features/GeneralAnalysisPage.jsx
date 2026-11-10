@@ -16,23 +16,17 @@ export default function GeneralAnalysisPage({ analysis, onChange, onBack, onCont
         eyebrow="ETAPA 2 DE 6 · ANÁLISIS INICIAL"
         title="¿Qué revisarías antes de compartirlo?"
         description="Registra tu criterio inicial antes de leer el resumen generado por IA y las notas de la reunión."
-      >
-        <div className="role-card">
-          <span className="role-icon"><Icon name="edit" /></span>
-          <span><small>ANTES DE CONSULTAR LAS FUENTES</small><strong>Criterio previo</strong></span>
-        </div>
-      </PageIntro>
+      />
 
-      <div className="general-analysis-layout">
-        <ContentCard>
-          <span className="eyebrow">EL ENCARGO</span>
-          <h2>Revisar sin cambiar el sentido</h2>
+      <div className="practice-form">
+        <details className="content-card practice-details">
+          <summary>Consultar el encargo</summary>
           <p>Un resumen puede ser claro y aun así modificar un acuerdo, omitir una condición o atribuir una tarea a la persona equivocada.</p>
           <div className="tip-box">
             <Icon name="lightbulb" />
             <span>Piensa en cómo diferenciarías una decisión confirmada, una propuesta y un compromiso personal.</span>
           </div>
-        </ContentCard>
+        </details>
         <ContentCard>
           <h2>Mi análisis inicial</h2>
           <Field

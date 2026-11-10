@@ -1,5 +1,4 @@
 import ActionButton from "../components/ActionButton";
-import Icon from "../components/Icon";
 import { PROFESSIONAL_CATEGORIES } from "../data/catalog";
 
 export default function ChallengeCard({ challenge, completed, inProgress, onStart }) {
@@ -7,27 +6,14 @@ export default function ChallengeCard({ challenge, completed, inProgress, onStar
 
   return (
     <article className="challenge-card catalog-challenge-card">
-      <div className="tag-row">
-        <span className="tag">{category?.name || challenge.category}</span>
-        <span className="tag">{challenge.level}</span>
-        <span className="tag">{challenge.duration} min</span>
-        <span className="tag">{challenge.environment}</span>
-        {completed && <span className="tag">Completado anteriormente</span>}
-      </div>
-      <span className="availability status-available">Disponible</span>
-      <p className="challenge-profession">{challenge.profession} · {challenge.ticket}</p>
+      <p className="challenge-meta">
+        {[category?.name || challenge.category, challenge.level, `${challenge.duration} min`, challenge.environment].join(" · ")}
+      </p>
       <h3>{challenge.title}</h3>
       <p>{challenge.description}</p>
-      <div className="challenge-skills">
-        {challenge.competencyType.map((competency) => (
-          <span className="tag" key={competency}>{competency}</span>
-        ))}
-      </div>
+      <p className="challenge-skills">{challenge.competencyType.join(" · ")}</p>
       <div className="challenge-footer">
-        <span className="workspace-id">
-          <Icon name={challenge.categoryId === "general" ? "file" : "code"} size={16} />
-          {challenge.categoryId === "general" ? "Documentos de reunión" : `workspace_id: ${challenge.workspaceId}`}
-        </span>
+        {completed && <span className="challenge-meta">Completado anteriormente</span>}
         <ActionButton onClick={onStart} icon={completed ? "reset" : "arrow-right"}>
           {completed ? "Practicar nuevamente" : inProgress ? "Continuar desafío" : "Iniciar desafío"}
         </ActionButton>

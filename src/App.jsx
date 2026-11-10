@@ -617,7 +617,7 @@ export default function App() {
         profileName={activeStep > 0 && isGeneral ? "Participante" : workspace.profileName}
         profileRole={activeStep > 0 ? activeChallenge.role : workspace.profileRole}
       />
-      <main className="page-shell">
+      <main className={activeStep > 0 ? "page-shell practice-page" : "page-shell"}>
         <div className="page-content">{currentPage()}</div>
       </main>
       {notice && <StatusNotice className="floating-notice" variant={notice.variant}>{notice.message}</StatusNotice>}

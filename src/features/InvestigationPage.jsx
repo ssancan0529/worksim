@@ -115,7 +115,6 @@ export default function InvestigationPage({
             rows={5}
           />
           <Callout icon="flask">Una hipótesis no es un resultado. Valídala con los casos de prueba antes de emitir un dictamen.</Callout>
-          <ActionButton onClick={onContinue} disabled={!canContinue} icon="arrow-right">Abrir en Sandbox de pruebas</ActionButton>
           {!canContinue && <p className="validation-hint">Marca una hipótesis o registra una observación antes de pasar a las pruebas.</p>}
         </ContentCard>
       </div>

@@ -67,8 +67,8 @@ export default function ReportPage({
         <p className="small-note">La simulación examina patrones de texto y no valida sintaxis ni comportamiento de una aplicación real.</p>
       </ContentCard>
 
-      <ContentCard className="reflection-card">
-        <h2>Reflexión profesional</h2>
+      <details className="content-card practice-details reflection-card">
+        <summary>Escribir una reflexión (opcional)</summary>
         <p className="muted">Registra qué aprendiste y qué evidencia te ayudó a decidir. Las notas se guardan en este navegador.</p>
         <div className="reflection-grid">
           <Field
@@ -96,7 +96,7 @@ export default function ReportPage({
             rows={3}
           />
         </div>
-      </ContentCard>
+      </details>
 
       <details className="content-card trace-card">
         <summary><Icon name="history" /> Revisar simulación paso a paso</summary>

@@ -17,16 +17,11 @@ export default function AnalysisPage({ analysis, onChange, onBack, onContinue })
         eyebrow="ETAPA 3 DE 6 · RAZONAMIENTO INDEPENDIENTE"
         title="Registro de análisis técnico autónomo"
         description="Registra tu razonamiento antes de inspeccionar la solución propuesta por la IA. Tu análisis inicial quedará guardado para contrastarlo con la evidencia."
-      >
-        <div className="role-card">
-          <span className="role-icon"><Icon name="edit" /></span>
-          <span><small>ANTES DE CONSULTAR LA IA</small><strong>Criterio previo</strong></span>
-        </div>
-      </PageIntro>
+      />
 
-      <div className="analysis-layout">
-        <ContentCard>
-          <h2>Contexto del encargo</h2>
+      <div className="practice-form">
+        <details className="content-card practice-details">
+          <summary>Consultar el encargo y la tabla pets</summary>
           <p>Desarrollar el endpoint relacional de búsqueda y recuperación priorizada de mascotas en adopción con filtrado multicriterio determinista.</p>
           <h3 className="subheading">Esquema: Tabla <code>pets</code></h3>
           <SchemaTable />
@@ -34,7 +29,7 @@ export default function AnalysisPage({ analysis, onChange, onBack, onContinue })
             <Icon name="lightbulb" />
             <span>No se espera una solución perfecta: identifica qué comprobarías y por qué antes de ver la propuesta.</span>
           </div>
-        </ContentCard>
+        </details>
 
         <ContentCard>
           <h2>Espacio de trabajo: criterio previo</h2>
