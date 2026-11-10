@@ -1,5 +1,4 @@
 import { STEPS } from "../data/scenario";
-import { WORKSPACES } from "../data/workspaces";
 import Icon from "./Icon";
 import WorkspaceNavigation from "./WorkspaceNavigation";
 
@@ -52,7 +51,6 @@ export default function AppHeader({
   onThemeChange,
   workspace,
   workspaceSection,
-  onWorkspaceChange,
   onWorkspaceSectionChange,
   steps = STEPS,
   profileName = "Alejandro Mora",
@@ -82,18 +80,6 @@ export default function AppHeader({
             onNavigate={onNavigate}
           />
         )}
-        <label className="header-workspace">
-          <span>Espacio</span>
-          <select
-            aria-label="Cambiar espacio de trabajo"
-            value={workspace.id}
-            onChange={(event) => onWorkspaceChange(event.target.value)}
-          >
-            {WORKSPACES.map((option) => (
-              <option key={option.id} value={option.id}>{option.label}</option>
-            ))}
-          </select>
-        </label>
         <label className="header-theme">
           <span>Tema</span>
           <select

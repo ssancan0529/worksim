@@ -19,20 +19,17 @@ import GeneralDecisionPage from "./features/GeneralDecisionPage";
 import GeneralInvestigationPage from "./features/GeneralInvestigationPage";
 import GeneralReportPage from "./features/GeneralReportPage";
 import GeneralVerificationPage from "./features/GeneralVerificationPage";
-import CompanyWorkspacePage from "./features/workspaces/CompanyWorkspacePage";
-import CreatorWorkspacePage from "./features/workspaces/CreatorWorkspacePage";
 import IndividualWorkspacePage from "./features/workspaces/IndividualWorkspacePage";
-import InstitutionWorkspacePage from "./features/workspaces/InstitutionWorkspacePage";
 import InvestigationPage from "./features/InvestigationPage";
 import ReportPage from "./features/ReportPage";
 import TestingPage from "./features/TestingPage";
 import { evaluateGeneralReview } from "./lib/generalChallenge";
 import { getUnlockedStep, simulateTests, verdictLabel } from "./lib/simulation";
 import { loadWorksimState, saveWorksimState } from "./lib/storage";
-import { getWorkspace, WORKSPACES } from "./data/workspaces";
+import { getWorkspace } from "./data/workspaces";
 
 const THEME_STORAGE_KEY = "worksim-theme";
-const WORKSPACE_STORAGE_KEY = "worksim-workspace";
+const workspace = getWorkspace("individual");
 
 function loadThemePreference() {
   try {
@@ -40,15 +37,6 @@ function loadThemePreference() {
     return ["auto", "light", "dark"].includes(preference) ? preference : "auto";
   } catch {
     return "auto";
-  }
-}
-
-function loadWorkspacePreference() {
-  try {
-    const preference = window.localStorage.getItem(WORKSPACE_STORAGE_KEY);
-    return WORKSPACES.some((workspace) => workspace.id === preference) ? preference : "individual";
-  } catch {
-    return "individual";
   }
 }
 
@@ -83,10 +71,7 @@ export default function App() {
     [CHALLENGE.id]: initialState.draft || createInitialDraft(),
   });
   const [history, setHistory] = useState(initialState.history);
-  const [workspaceRole, setWorkspaceRole] = useState(loadWorkspacePreference);
-  const [workspaceSection, setWorkspaceSection] = useState(
-    () => getWorkspace(loadWorkspacePreference()).defaultSection,
-  );
+  const [workspaceSection, setWorkspaceSection] = useState(workspace.defaultSection);
   const [activeChallengeId, setActiveChallengeId] = useState(() => (
     [CHALLENGE.id, GENERAL_CHALLENGE.id].includes(initialState.activeChallengeId)
       ? initialState.activeChallengeId
@@ -97,7 +82,6 @@ export default function App() {
     initialState.error ? { message: initialState.error, variant: "warning" } : null,
   );
   const [theme, setTheme] = useState(loadThemePreference);
-  const workspace = getWorkspace(workspaceRole);
   const activeChallenge = getChallenge(activeChallengeId);
   const isGeneral = activeChallengeId === GENERAL_CHALLENGE.id;
   const steps = isGeneral ? GENERAL_STEPS : STEPS;
@@ -150,22 +134,6 @@ export default function App() {
     } catch {
       setNotice({
         message: "El tema cambiará ahora, pero no se pudo guardar la preferencia en este navegador.",
-        variant: "warning",
-      });
-    }
-  };
-
-  const changeWorkspace = (workspaceId) => {
-    const nextWorkspace = getWorkspace(workspaceId);
-    setWorkspaceRole(nextWorkspace.id);
-    setWorkspaceSection(nextWorkspace.defaultSection);
-    setActiveStep(0);
-    setNotice(null);
-    try {
-      window.localStorage.setItem(WORKSPACE_STORAGE_KEY, nextWorkspace.id);
-    } catch {
-      setNotice({
-        message: "El espacio cambiará ahora, pero no se pudo guardar la preferencia en este navegador.",
         variant: "warning",
       });
     }
@@ -493,10 +461,6 @@ export default function App() {
     moveTo(challengeId === GENERAL_CHALLENGE.id ? GENERAL_STEPS.length - 1 : STEPS.length - 1);
   };
 
-  const showWorkspaceNotice = (message) => {
-    setNotice({ message, variant: "info" });
-  };
-
   const progress = Object.fromEntries(
     Object.entries(drafts).map(([challengeId, challengeDraft]) => [
       challengeId,
@@ -510,7 +474,7 @@ export default function App() {
   const currentPage = () => {
     switch (activeStep) {
       case 0:
-        if (workspaceRole === "individual" && workspaceSection === "explorer") {
+        if (workspaceSection === "explorer") {
           return (
             <ChallengesPage
               history={history}
@@ -525,24 +489,15 @@ export default function App() {
             />
           );
         }
-        if (workspaceRole === "individual") {
-          return (
-            <IndividualWorkspacePage
-              workspace={workspace}
-              section={workspaceSection}
-              progress={progress}
-              history={history}
-              onOpenReport={openReportFor}
-            />
-          );
-        }
-        if (workspaceRole === "institution") {
-          return <InstitutionWorkspacePage workspace={workspace} section={workspaceSection} onAction={showWorkspaceNotice} />;
-        }
-        if (workspaceRole === "company") {
-          return <CompanyWorkspacePage workspace={workspace} section={workspaceSection} onAction={showWorkspaceNotice} />;
-        }
-        return <CreatorWorkspacePage workspace={workspace} section={workspaceSection} onAction={showWorkspaceNotice} />;
+        return (
+          <IndividualWorkspacePage
+            workspace={workspace}
+            section={workspaceSection}
+            progress={progress}
+            history={history}
+            onOpenReport={openReportFor}
+          />
+        );
       case 1:
         return isGeneral
           ? <GeneralBriefingPage onBack={() => moveTo(0)} onContinue={readBriefing} />
@@ -657,11 +612,10 @@ export default function App() {
         onThemeChange={changeTheme}
         workspace={workspace}
         workspaceSection={workspaceSection}
-        onWorkspaceChange={changeWorkspace}
         onWorkspaceSectionChange={changeWorkspaceSection}
         steps={steps}
         profileName={activeStep > 0 && isGeneral ? "Participante" : workspace.profileName}
-        profileRole={activeStep > 0 && workspaceRole === "individual" ? activeChallenge.role : workspace.profileRole}
+        profileRole={activeStep > 0 ? activeChallenge.role : workspace.profileRole}
       />
       <main className="page-shell">
         <div className="page-content">{currentPage()}</div>
