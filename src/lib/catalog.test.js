@@ -29,7 +29,10 @@ test("category search matches roles, skills and accents", () => {
 });
 
 test("challenge search finds available experience by skill or profession", () => {
-  assert.equal(filterChallenges(AVAILABLE_CHALLENGES, noFilters, "Python").length, 1);
+  assert.deepEqual(filterChallenges(AVAILABLE_CHALLENGES, noFilters, "Python").map(({ id }) => id),
+    ["practica-sql-python", "eng-842"]);
+  assert.deepEqual(filterChallenges(AVAILABLE_CHALLENGES, { ...noFilters, difficulty: "Intermedio-alto" }, "SQL")
+    .map(({ href }) => href), ["./practica/"]);
   assert.equal(filterChallenges(AVAILABLE_CHALLENGES, noFilters, "backend junior").length, 1);
   assert.equal(filterChallenges(AVAILABLE_CHALLENGES, noFilters, "diseño UX").length, 0);
 });

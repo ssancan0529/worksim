@@ -79,6 +79,21 @@ export const PROFESSIONAL_CATEGORIES = [
 ];
 
 export const AVAILABLE_CHALLENGES = [
+  {
+    id: "practica-sql-python",
+    title: "Práctica de SQL y Python",
+    description: "Prepara un reporte de transferencias, prioriza una cola de soporte y comprueba una función de retiros con pruebas reales.",
+    role: "Analista de datos junior",
+    profession: "Análisis de datos",
+    duration: 35,
+    level: "Intermedio-alto",
+    environment: "SQLite / Python",
+    categoryId: "data-ai",
+    competencyType: ["Análisis de datos", "Validación técnica", "Resolución de problemas"],
+    keywords: ["SQL", "Python", "ordenamiento", "paginación", "soporte", "retiros"],
+    status: "available",
+    href: "./practica/",
+  },
   MAYRA_CHALLENGE,
   {
     ...GENERAL_CHALLENGE,
@@ -129,7 +144,7 @@ export const AVAILABLE_CATEGORIES = PROFESSIONAL_CATEGORIES.filter((category) =>
   AVAILABLE_CHALLENGES.some((challenge) => challenge.categoryId === category.id),
 );
 
-export const DIFFICULTIES = ["Principiante", "Básico", "Intermedio", "Avanzado"].filter((level) =>
+export const DIFFICULTIES = ["Principiante", "Básico", "Intermedio", "Intermedio-alto", "Avanzado"].filter((level) =>
   AVAILABLE_CHALLENGES.some((challenge) => challenge.level === level),
 );
 export const COMPETENCY_TYPES = [

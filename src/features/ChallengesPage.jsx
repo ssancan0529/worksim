@@ -63,10 +63,10 @@ function CategoryDetail({ category }) {
         <Icon name={category.status === "available" ? "circle-check" : "info"} size={17} />
         <p>
           {category.status === "available"
-            ? "Hay un desafío real disponible en esta área."
+            ? "Puedes iniciar los desafíos de esta área."
             : `${status.description} Por ahora no hay pruebas iniciables en esta área.`}
         </p>
-        {category.status === "available" && <a className="text-button" href="#available-challenges">Ver desafío disponible →</a>}
+        {category.status === "available" && <a className="text-button" href="#available-challenges">Ver desafíos disponibles →</a>}
       </div>
       {plannedChallenges.length > 0 && (
         <div className="category-planned-challenges">

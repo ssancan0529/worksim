@@ -141,7 +141,7 @@ export default function MayraChallengePage({
       )}
       {step === 2 && (
         <ContentCard>
-          <h2>Haz una corrida de escritorio</h2>
+          <h2>Ejecuta la consulta paso a paso</h2>
           <p>Recorre la consulta fila por fila. Anota qué IDs pasarían sus filtros y señala una fila cuya inclusión o exclusión revisarías frente al encargo.</p>
           <p className="muted">El encargo pide transferencias confirmadas de Guayaquil de $100 o más.</p>
           <pre className="code-block"><code>{AI_QUERY}</code></pre>
@@ -161,11 +161,11 @@ export default function MayraChallengePage({
       {step === 3 && (
         <ContentCard>
           <h2>Ejecuta la consulta y decide</h2>
-          <p>SQLite ejecuta el SQL en tu navegador con las mismas transacciones ficticias de la corrida de escritorio.</p>
+          <p>SQLite ejecuta el SQL en tu navegador con las mismas transacciones ficticias que revisaste paso a paso.</p>
           <details className="practice-details">
-            <summary>Consultar mi estimación, corrida y SQL</summary>
+            <summary>Consultar mi estimación, ejecución paso a paso y SQL</summary>
             <p><strong>Estimación:</strong> {prediction} filas</p>
-            <p><strong>Corrida de escritorio:</strong> {investigation.notes}</p>
+            <p><strong>Ejecución paso a paso:</strong> {investigation.notes}</p>
             <pre className="code-block"><code>{AI_QUERY}</code></pre>
           </details>
           {!testing.ran && <ActionButton disabled={running} onClick={execute} icon="play">{running ? "Ejecutando…" : "Ejecutar consulta de IA"}</ActionButton>}
@@ -194,7 +194,7 @@ export default function MayraChallengePage({
             ...current, testing: { ...current.testing, code },
           }))} />
           <PageActions>
-            <ActionButton variant="secondary" disabled={running} onClick={onBack}>Volver a la corrida</ActionButton>
+            <ActionButton variant="secondary" disabled={running} onClick={onBack}>Volver a ejecutar paso a paso</ActionButton>
             {testing.ran && <ActionButton disabled={!ready} onClick={onFinish} icon="arrow-right">Guardar decisión y ver informe</ActionButton>}
           </PageActions>
         </ContentCard>
@@ -204,7 +204,7 @@ export default function MayraChallengePage({
           <ContentCard>
             <h2>Lo que esperabas y lo que salió</h2>
             <p><strong>Tu estimación:</strong> {prediction} filas.</p>
-            <p><strong>Tu corrida de escritorio:</strong> {investigation.notes}</p>
+            <p><strong>Tu ejecución paso a paso:</strong> {investigation.notes}</p>
             <p><strong>Resultado de la consulta de IA:</strong> {returned.length} filas.</p>
             <TransactionTable rows={returned} caption="Filas obtenidas al ejecutar la consulta en SQLite" />
             <TransactionTable rows={EXPECTED_ROWS} caption="Filas esperadas según el encargo" />

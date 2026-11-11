@@ -73,7 +73,7 @@ npm install
 npm run dev
 ```
 
-Para generar la versión de producción, ejecuta `npm run build`. La plantilla editable está en `src/index.html`. GitHub Pages publica desde la raíz de `main`: copia `dist/index.html` a la raíz y coloca los archivos de `dist/assets/` en `assets/` en el mismo commit.
+Para generar la versión de producción, ejecuta `npm run build`. Las plantillas editables están en `src/index.html` y `src/practica/index.html`. GitHub Pages publica desde la raíz de `main`. Copia `dist/index.html`, `dist/practica/index.html` y los archivos de `dist/assets/` a sus rutas equivalentes en la raíz en el mismo commit.
 
 El flujo de seis etapas y el caso de Adopta+ siguen las pantallas de `screens.html`; el análisis, las hipótesis, el dictamen y la reflexión se guardan en el navegador. El historial y la evidencia se pueden consultar y exportar como JSON.
 

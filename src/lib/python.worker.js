@@ -1,12 +1,10 @@
 import setup from "./pythonSetup.py?raw";
-
-const indexURL = "https://cdn.jsdelivr.net/pyodide/v0.27.7/full/";
+import { loadBrowserPython } from "./pyodideRuntime.js";
 
 self.onmessage = async ({ data: { code, parameters } }) => {
   let output = "";
   try {
-    importScripts(`${indexURL}pyodide.js`);
-    const pyodide = await self.loadPyodide({ indexURL });
+    const pyodide = await loadBrowserPython();
     await pyodide.loadPackage(["sqlalchemy", "sqlite3"]);
     pyodide.setStdout({ batched: (line) => { output += `${line}\n`; } });
     pyodide.setStderr({ batched: (line) => { output += `${line}\n`; } });

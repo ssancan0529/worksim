@@ -5,20 +5,20 @@ export const MAYRA_CHALLENGE = {
   company: "Banco Horizonte",
   role: "Analista de datos en prácticas",
   profession: "Análisis de datos",
-  description: "Estima el resultado de una consulta SQL generada por IA, haz una corrida de escritorio y comprueba qué filas devuelve.",
+  description: "Estima el resultado de una consulta SQL generada por IA, ejecútala paso a paso y comprueba qué filas devuelve.",
   duration: 15,
   level: "Básico",
   environment: "SQL / SQLite",
   categoryId: "data-ai",
   competencyType: ["Análisis de datos", "Pensamiento crítico", "Alfabetización en IA"],
-  keywords: ["SQL", "consulta", "transacciones", "corrida de escritorio"],
+  keywords: ["SQL", "consulta", "transacciones", "ejecución paso a paso"],
   status: "available",
 };
 
 export const MAYRA_STEPS = [
   { path: "desafios", label: "Desafíos" },
   { path: "encargo", label: "Encargo y estimación" },
-  { path: "corrida", label: "Corrida de escritorio" },
+  { path: "ejecutar-paso-a-paso", label: "Ejecutar paso a paso" },
   { path: "comprobacion", label: "Comprobación y decisión" },
   { path: "informe", label: "Informe" },
 ];
