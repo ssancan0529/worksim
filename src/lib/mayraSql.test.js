@@ -6,6 +6,7 @@ import test from "node:test";
 import { AI_QUERY, EXPECTED_ROWS, TRANSACTIONS } from "../data/mayra.js";
 import { exercises } from "../practica/cases.mjs";
 import { evaluateSql } from "../practica/sql-engine.mjs";
+import { canAdvanceExercise } from "../practica/state.mjs";
 
 const vendorUrl = new URL("../../vendor/sql-wasm.js", import.meta.url);
 const loaderContext = {
@@ -54,8 +55,24 @@ test("junior queries check filtering, selection and sorting with real SQLite out
   assert.deepEqual(report.rows.map(([id]) => id), [101, 103, 108]);
   const pendingIncluded = evaluateSql(sqlite, transfers.id, transfers.ai);
   assert.deepEqual(pendingIncluded.checks.map(({ passed }) => passed), [true, false, false, true]);
+  assert.match(pendingIncluded.checks[1].evidence, /ID 106.*pendiente/);
+  assert.match(pendingIncluded.checks[2].evidence, /faltantes \(108\).*de más \(106\)/);
   assert.equal(evaluateSql(sqlite, support.id, support.reference).passed, 4);
   const reversedTies = evaluateSql(sqlite, support.id, support.ai);
   assert.deepEqual(reversedTies.checks.map(({ passed }) => passed), [true, true, true, false]);
   assert.match(evaluateSql(sqlite, support.id, "SELECT FROM solicitudes").error, /error de sintaxis/i);
+});
+
+test("SQL advancement accepts runnable queries regardless of their score", () => {
+  for (const exercise of exercises.filter(item => item.language === "SQL")) {
+    const partial = evaluateSql(sqlite, exercise.id, `SELECT * FROM ${exercise.table};`);
+    const noCriteria = evaluateSql(sqlite, exercise.id, "SELECT 1;");
+    const invalid = evaluateSql(sqlite, exercise.id, `SELECT FROM ${exercise.table};`);
+    assert.ok(partial.passed < partial.total);
+    assert.equal(noCriteria.passed, 0);
+    assert.equal(canAdvanceExercise(exercise, { preview: partial }), true);
+    assert.equal(canAdvanceExercise(exercise, { preview: noCriteria }), true);
+    assert.equal(canAdvanceExercise(exercise, { preview: invalid }), false);
+    assert.equal(canAdvanceExercise(exercise, {}), false);
+  }
 });

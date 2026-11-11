@@ -11,7 +11,7 @@ import StatusNotice from "../components/StatusNotice";
 import {
   confidenceIsValid, exercises, issues, PRACTICE_CHALLENGE, PRACTICE_CLOSING_STEP, scoreDetection,
 } from "../practica/cases.mjs";
-import { canCompletePractice, readPreviousPractice } from "../practica/state.mjs";
+import { canAdvanceExercise, canCompletePractice, getAttemptResult, readPreviousPractice } from "../practica/state.mjs";
 import { runExercise } from "../practica/runExercise";
 
 const ratings = ["Nada seguro/a", "Poco seguro/a", "Algo seguro/a", "Bastante seguro/a", "Muy seguro/a"];
@@ -175,7 +175,8 @@ function PracticeExercise({ exercise, draft, onUpdate, onBack, onNext, nextLabel
   const currentRun = useRef(null);
   const ready = Boolean(attempt.code.trim()) && !readOnly && !busy;
   const readyToCompare = ready && (isSql ? Boolean(attempt.prediction) : attempt.lines.length > 0 || attempt.none);
-  const result = attempt.preview ?? attempt.comparison?.user;
+  const result = getAttemptResult(attempt);
+  const canAdvance = readOnly || canAdvanceExercise(exercise, attempt);
 
   useEffect(() => () => {
     const job = currentRun.current;
@@ -235,11 +236,14 @@ function PracticeExercise({ exercise, draft, onUpdate, onBack, onNext, nextLabel
             <ExerciseEditor id={`editor-${exercise.id}`} label={isSql ? "Tu consulta SQL" : "Tu función de Python"}
               file={isSql ? "consulta.sql" : "retiros.py"} value={attempt.code} readOnly={readOnly || Boolean(busy)}
               maxLength={6000}
-              placeholder={isSql ? "Escribe tu consulta aquí…" : "def retirar(saldo, monto):"}
+              placeholder={isSql ? `SELECT * FROM ${exercise.table};` : "def retirar(saldo, monto):"}
               onRun={() => execute(false)} onChange={code => {
                 setError(null);
                 updateAttempt({ code, preview: null, comparison: null }, true);
               }} />
+            {isSql && !canAdvance && <p className="field-hint exercise-start-hint">
+              Para avanzar, ejecuta una consulta de lectura. Puedes empezar con <code>SELECT * FROM {exercise.table};</code>
+            </p>}
             <div className="exercise-editor-actions">
               <ActionButton icon="play" iconPosition="left" disabled={!ready} onClick={() => execute(false)}>
                 {busy === "preview" ? "Ejecutando…" : isSql ? "Ejecutar consulta" : "Ejecutar Python"}
@@ -250,6 +254,7 @@ function PracticeExercise({ exercise, draft, onUpdate, onBack, onNext, nextLabel
           <ContentCard>
             <h2>Resultado de tu código</h2>
             <div aria-live="polite" aria-busy={Boolean(busy)}>
+              {isSql && canAdvance && !readOnly && !busy && <p className="field-hint">Intento registrado. Puedes continuar.</p>}
               {busy === "preview" ? <p className="muted">Ejecutando casos de prueba…</p>
                 : error?.target === "preview" ? <StatusNotice variant="warning">{error.message}</StatusNotice>
                   : <ExerciseResult result={result} emptyText="Ejecuta tu código para comprobar los requisitos." />}
@@ -259,7 +264,7 @@ function PracticeExercise({ exercise, draft, onUpdate, onBack, onNext, nextLabel
       </div>
 
       <ContentCard className="exercise-comparison">
-        <h2>Compara con la IA</h2>
+        <h2>{isSql ? "Compara con la IA (opcional)" : "Compara con la IA"}</h2>
         {attempt.initialCode === null ? (
           <>
             <p>Escribe tu primera solución para ver la propuesta.</p>
@@ -313,9 +318,11 @@ function PracticeExercise({ exercise, draft, onUpdate, onBack, onNext, nextLabel
       )}
       <PageActions>
         <ActionButton variant="secondary" icon="arrow-left" iconPosition="left" onClick={onBack}>Volver</ActionButton>
-        <ActionButton icon="arrow-right" disabled={!attempt.comparison || Boolean(busy)} onClick={onNext}>{nextLabel}</ActionButton>
+        <ActionButton icon="arrow-right" disabled={!canAdvance || Boolean(busy)} onClick={onNext}>{nextLabel}</ActionButton>
       </PageActions>
-      {!attempt.comparison && <p className="validation-hint">Ejecuta la comparación para avanzar.</p>}
+      {!canAdvance && <p className="validation-hint">
+        {isSql ? "Ejecuta una consulta de lectura para avanzar." : "Ejecuta la comparación para avanzar."}
+      </p>}
     </>
   );
 }
@@ -335,7 +342,7 @@ function PracticeClose({ draft, onUpdate, onHome, onBack, onExport, onCopy }) {
         <h2>Resumen de tu intento</h2>
         <ul className="exercise-criteria exercise-summary">
           {exercises.map(exercise => {
-            const result = draft.attempts[exercise.id].comparison.user;
+            const result = getAttemptResult(draft.attempts[exercise.id]);
             return <li key={exercise.id}><div><strong>{exercise.label}</strong><span>{result.passed} de {result.total} criterios cumplidos</span></div></li>;
           })}
           <li><div><strong>Hallazgos en Python</strong><span>{audit.hits} de {audit.total}</span></div></li>

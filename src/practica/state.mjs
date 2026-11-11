@@ -49,10 +49,21 @@ export function normalizePracticeDraft(raw) {
   };
 }
 
+export function getAttemptResult(attempt) {
+  return attempt.preview ?? attempt.comparison?.user ?? null;
+}
+
+export function canAdvanceExercise(exercise, attempt) {
+  if (exercise.language !== "SQL") return Boolean(attempt.comparison);
+  const result = getAttemptResult(attempt);
+  return Boolean(result && !result.error);
+}
+
 export function getPracticeStep(draft) {
   if (!draft.started) return 0;
+  if (draft.completedAt) return PRACTICE_CLOSING_STEP;
   if (!confidenceIsValid(draft.before)) return 1;
-  const pending = exercises.findIndex(({ id }) => !draft.attempts[id].comparison);
+  const pending = exercises.findIndex(exercise => !canAdvanceExercise(exercise, draft.attempts[exercise.id]));
   return pending === -1 ? PRACTICE_CLOSING_STEP : pending + 2;
 }
 
@@ -62,7 +73,7 @@ export function canCompletePractice(draft) {
 
 export function practiceTotals(draft) {
   return exercises.reduce((totals, { id }) => {
-    const result = draft.attempts[id].comparison?.user;
+    const result = getAttemptResult(draft.attempts[id]);
     return {
       passed: totals.passed + (result?.passed ?? 0),
       total: totals.total + (result?.total ?? 0),

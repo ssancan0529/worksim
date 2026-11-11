@@ -881,7 +881,7 @@ textarea::placeholder { color: #829187; }
 .exercise-brief .plain-list { font-size: .92rem; }
 .exercise-table { margin-top: 12px; max-height: 275px; overflow: auto; }
 .exercise-table table { min-width: max-content; }
-.exercise-table caption { margin-bottom: 5px; text-align: left; color: var(--muted); font: 650 .8rem "Inter", sans-serif; }
+.exercise-table caption { padding: 8px 10px; text-align: left; color: var(--text); background: var(--surface-low); font: 700 1.125rem/1.35 "Inter", sans-serif; }
 .exercise-table td, .exercise-table th { padding: 7px; font-size: .74rem; }
 .exercise-notes { display: grid; gap: 9px; margin: 8px 0 0; padding-left: 20px; color: var(--muted); font-size: .88rem; }
 .exercise-source { position: sticky; top: 92px; }
@@ -897,6 +897,7 @@ textarea::placeholder { color: #829187; }
 .exercise-editor .exercise-editor-body textarea:focus { outline: 0; box-shadow: none; }
 .exercise-editor .exercise-editor-body textarea::placeholder { color: #a9baaf; }
 .exercise-editor-actions { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px 12px; margin-top: 10px; }
+.exercise-start-hint { margin-top: 10px; }
 .exercise-hint { color: var(--muted); font-size: .83rem; }
 .exercise-hint summary, .exercise-criteria summary { color: var(--primary); cursor: pointer; font-weight: 650; }
 .exercise-hint p { margin: 4px 0 0; }
