@@ -44,7 +44,7 @@ a { color: inherit; }
 .brand { flex: 0 0 auto; display: flex; align-items: center; gap: 11px; border: 0; padding: 0; background: transparent; color: var(--primary); }
 .brand-name { font-size: 16px; font-weight: 700; letter-spacing: 1.5px; }
 .brand-slash { color: #a7b9ac; }
-.brand-section { color: var(--muted); font: 11px var(--mono); text-transform: uppercase; letter-spacing: .8px; }
+.brand-section { color: var(--muted); font: 500 16px/1.4 Inter, sans-serif; text-transform: uppercase; letter-spacing: normal; }
 .step-nav { display: flex; align-items: center; justify-content: center; flex: 1; gap: 5px; max-width: 840px; }
 .step-nav-item { display: flex; align-items: center; gap: 5px; }
 .nav-dash { color: #b6c4ba; font: 10px var(--mono); }
@@ -59,12 +59,12 @@ a { color: inherit; }
 .header-workspace { display: flex; align-items: center; gap: 7px; color: var(--muted); font: 11px var(--mono); white-space: nowrap; }
 .header-workspace select { min-height: 34px; border: 1px solid var(--line); border-radius: 6px; padding: 0 8px; background: var(--card); color: var(--text); font: 12px var(--mono); }
 .header-workspace select:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
-.header-theme { display: flex; align-items: center; gap: 7px; color: var(--muted); font: 11px var(--mono); white-space: nowrap; }
-.header-theme select { min-height: 34px; border: 1px solid var(--line); border-radius: 6px; padding: 0 8px; background: var(--card); color: var(--text); font: 12px var(--mono); }
+.header-theme { display: flex; align-items: center; gap: 7px; color: var(--muted); font: 500 16px/1.4 Inter, sans-serif; white-space: nowrap; }
+.header-theme select { min-height: 34px; border: 1px solid var(--line); border-radius: 6px; padding: 0 8px; background: var(--card); color: var(--text); font: 500 16px/1.4 Inter, sans-serif; }
 .header-theme select:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
 .status-dot, .ready-label i, .simulation-label i { width: 7px; height: 7px; display: inline-block; border-radius: 50%; background: var(--primary); }
 .status-dot.done { background: var(--green); }
-.status-label { white-space: nowrap; text-transform: uppercase; font: 9px var(--mono); }
+.status-label { white-space: nowrap; text-transform: uppercase; font: 500 14px/1.4 Inter, sans-serif; }
 .user-profile { display: flex; align-items: center; gap: 9px; margin-left: 9px; }
 .user-copy { display: flex; flex-direction: column; font-size: 10px; line-height: 1.5; text-align: right; }
 .user-copy span { color: var(--muted); }
