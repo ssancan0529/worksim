@@ -1,6 +1,8 @@
 import PythonExecution from "./PythonExecution";
 import { REQUIREMENTS } from "../data/scenario";
 import ActionButton from "../components/ActionButton";
+import CriterionStatus from "../components/CriterionStatus";
+import ExerciseEditor from "../components/ExerciseEditor";
 import Field from "../components/Field";
 import Icon from "../components/Icon";
 import PageActions from "../components/PageActions";
@@ -47,20 +49,17 @@ export default function TestingPage({
             <span className="simulation-label"><i /> Python + revisión estática</span>
           </div>
           <p className="muted">Edita la función y ejecútala para observar su salida. También puedes revisar las señales que detecta la suite estática.</p>
-          <div className="code-toolbar test-file">
-            <span><Icon name="code" size={15} /> pets_controller.py</span>
-            <span><Icon name="file" size={15} /> suite simulada · {testing.runs.length} ejecuciones</span>
-            <button className="text-button" onClick={onResetCode}><Icon name="reset" size={14} /> Restaurar propuesta IA</button>
-          </div>
-          <label className="editor-label" htmlFor="sandbox-code">Código Python</label>
-          <textarea
+          <ExerciseEditor
             id="sandbox-code"
-            className="sandbox-input"
+            label="Código Python"
+            file="pets_controller.py"
             value={testing.code}
-            onChange={(event) => onChange("code", event.target.value)}
-            spellCheck={false}
-            rows={12}
+            onChange={(code) => onChange("code", code)}
+            rows={9}
           />
+          <div className="exercise-editor-actions">
+            <button type="button" className="text-button" onClick={onResetCode}><Icon name="reset" size={14} /> Restaurar propuesta IA</button>
+          </div>
           <PythonExecution code={testing.code} />
           <h3>Revisión estática de requisitos</h3>
           <p className="field-hint">Estas comprobaciones buscan patrones en el texto del código. Sus resultados alimentan el informe del reto.</p>
@@ -70,7 +69,7 @@ export default function TestingPage({
             <div className="test-results" aria-live="polite">
               <div className="results-heading">
                 <h3>Resultados de esta revisión</h3>
-                <span>{passedCount} pasan · {testing.results.length - passedCount} requieren revisión</span>
+                <span>{passedCount} de {testing.results.length} criterios cumplidos</span>
               </div>
               {testing.results.map((result) => (
                 <article className="test-result" key={result.id}>
@@ -79,6 +78,7 @@ export default function TestingPage({
                     className={result.passed ? "passed" : "failed"}
                   />
                   <div><strong>{result.name}</strong><p>{result.detail}</p></div>
+                  <CriterionStatus passed={result.passed} />
                 </article>
               ))}
             </div>

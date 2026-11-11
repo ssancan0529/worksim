@@ -9,7 +9,7 @@ self.onmessage = async ({ data }) => {
   try {
     const exercise = exercises.find(item => item.id === data.id);
     let evaluate;
-    if (exercise.engine === "sql") {
+    if (exercise.language === "SQL") {
       importScripts(scriptUrl);
       const SQL = await self.initSqlJs({ locateFile: () => wasmUrl });
       evaluate = code => evaluateSql(SQL, exercise.id, code);
@@ -21,7 +21,7 @@ self.onmessage = async ({ data }) => {
       const runTests = python.globals.get("ejecutar_pruebas");
       evaluate = code => {
         const result = JSON.parse(runTests(code));
-        if (result.error) return result;
+        if (result.error) return { ...result, checks: [], passed: 0, total: 5 };
         return { ...result, passed: result.checks.filter(check => check.passed).length, total: result.checks.length };
       };
     }

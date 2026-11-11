@@ -4,6 +4,8 @@ import { createRequire } from "node:module";
 import vm from "node:vm";
 import test from "node:test";
 import { AI_QUERY, EXPECTED_ROWS, TRANSACTIONS } from "../data/mayra.js";
+import { exercises } from "../practica/cases.mjs";
+import { evaluateSql } from "../practica/sql-engine.mjs";
 
 const vendorUrl = new URL("../../vendor/sql-wasm.js", import.meta.url);
 const loaderContext = {
@@ -43,4 +45,17 @@ test("SQL workspace supports custom columns, empty results and syntax errors", a
   assert.deepEqual(count.results[0], { columns: ["total"], values: [[7]] });
   assert.deepEqual((await execute("SELECT * FROM transacciones WHERE id = 0")).results, []);
   assert.ok((await execute("SELECT inexistente FROM transacciones")).error);
+});
+
+test("junior queries check filtering, selection and sorting with real SQLite output", () => {
+  const [transfers, support] = exercises;
+  const report = evaluateSql(sqlite, transfers.id, transfers.reference);
+  assert.equal(report.passed, 4);
+  assert.deepEqual(report.rows.map(([id]) => id), [101, 103, 108]);
+  const pendingIncluded = evaluateSql(sqlite, transfers.id, transfers.ai);
+  assert.deepEqual(pendingIncluded.checks.map(({ passed }) => passed), [true, false, false, true]);
+  assert.equal(evaluateSql(sqlite, support.id, support.reference).passed, 4);
+  const reversedTies = evaluateSql(sqlite, support.id, support.ai);
+  assert.deepEqual(reversedTies.checks.map(({ passed }) => passed), [true, true, true, false]);
+  assert.match(evaluateSql(sqlite, support.id, "SELECT FROM solicitudes").error, /error de sintaxis/i);
 });

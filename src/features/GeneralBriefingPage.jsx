@@ -1,10 +1,12 @@
 import ActionButton from "../components/ActionButton";
 import Callout from "../components/Callout";
 import ContentCard from "../components/ContentCard";
+import ExerciseGuide from "../components/ExerciseGuide";
 import Icon from "../components/Icon";
 import PageActions from "../components/PageActions";
 import PageIntro from "../components/PageIntro";
 import { GENERAL_CHALLENGE } from "../data/scenario";
+import { reviewGuide } from "../data/exerciseGuides";
 
 export default function GeneralBriefingPage({ onBack, onContinue }) {
   return (
@@ -16,6 +18,8 @@ export default function GeneralBriefingPage({ onBack, onContinue }) {
       >
         <span className="case-label"><Icon name="file" /> SIN CONOCIMIENTOS TÉCNICOS</span>
       </PageIntro>
+
+      <ExerciseGuide {...reviewGuide} />
 
       <div className="brief-layout general-brief-layout">
         <div className="brief-content">
@@ -31,8 +35,7 @@ export default function GeneralBriefingPage({ onBack, onContinue }) {
             <p>Actúas como una persona del equipo responsable de revisar el borrador antes de su distribución. Tu trabajo es cuidar que el documento no cambie el sentido de la conversación ni atribuya decisiones que nadie aceptó.</p>
           </ContentCard>
           <ContentCard>
-            <span className="eyebrow">OBJETIVO</span>
-            <h2>Contrastar antes de compartir</h2>
+            <h2>Tu encargo</h2>
             <ul className="plain-list">
               <li>Verificar acuerdos y compromisos contra las notas.</li>
               <li>Detectar información relevante que haya quedado fuera.</li>

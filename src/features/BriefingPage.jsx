@@ -1,10 +1,12 @@
 import ActionButton from "../components/ActionButton";
 import Callout from "../components/Callout";
 import ContentCard from "../components/ContentCard";
+import ExerciseGuide from "../components/ExerciseGuide";
 import Icon from "../components/Icon";
 import PageActions from "../components/PageActions";
 import PageIntro from "../components/PageIntro";
 import RequirementsList from "../components/RequirementsList";
+import { endpointGuide } from "../data/exerciseGuides";
 
 export default function BriefingPage({ onBack, onContinue }) {
   return (
@@ -17,6 +19,8 @@ export default function BriefingPage({ onBack, onContinue }) {
         <span className="case-label"><Icon name="paw" /> CASO SIMULADO</span>
       </PageIntro>
 
+      <ExerciseGuide {...endpointGuide} />
+
       <div className="brief-layout">
         <div className="brief-content">
           <ContentCard>
@@ -25,7 +29,7 @@ export default function BriefingPage({ onBack, onContinue }) {
             <p>La implementación generada por el modelo de IA ya se encuentra disponible en la rama de trabajo. Tu cometido es realizar una auditoría rigurosa para corroborar que la lógica cumpla cada requerimiento sin fallas silenciosas.</p>
           </ContentCard>
           <ContentCard>
-            <h2>2. Objetivo del trabajo</h2>
+            <h2>2. Tu encargo</h2>
             <p>Revisar y validar técnicamente la solución propuesta antes de incorporarla al sistema de producción, asegurando que cumpla con los requerimientos de negocio y no genere regresiones funcionales.</p>
           </ContentCard>
           <ContentCard>

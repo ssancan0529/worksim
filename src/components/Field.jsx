@@ -7,6 +7,7 @@ export default function Field({
   placeholder,
   rows = 4,
   required = false,
+  disabled = false,
 }) {
   return (
     <div className="form-field">
@@ -22,6 +23,7 @@ export default function Field({
         placeholder={placeholder}
         rows={rows}
         required={required}
+        disabled={disabled}
       />
     </div>
   );

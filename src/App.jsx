@@ -23,12 +23,15 @@ import GeneralReportPage from "./features/GeneralReportPage";
 import GeneralVerificationPage from "./features/GeneralVerificationPage";
 import IndividualWorkspacePage from "./features/workspaces/IndividualWorkspacePage";
 import InvestigationPage from "./features/InvestigationPage";
+import PracticeChallengePage from "./features/PracticeChallengePage";
 import ReportPage from "./features/ReportPage";
 import TestingPage from "./features/TestingPage";
 import { evaluateGeneralReview } from "./lib/generalChallenge";
 import { getUnlockedStep, simulateTests, verdictLabel } from "./lib/simulation";
 import { loadWorksimState, saveWorksimState } from "./lib/storage";
 import { getWorkspace } from "./data/workspaces";
+import { exercises, PRACTICE_CHALLENGE, PRACTICE_CLOSING_STEP, PRACTICE_STEPS, scoreDetection } from "./practica/cases.mjs";
+import { canCompletePractice, createPracticeDraft, getPracticeStep, practiceTotals } from "./practica/state.mjs";
 
 const THEME_STORAGE_KEY = "worksim-theme";
 const workspace = getWorkspace("individual");
@@ -43,6 +46,7 @@ function loadThemePreference() {
 }
 
 function createDraftForChallenge(challengeId) {
+  if (challengeId === PRACTICE_CHALLENGE.id) return createPracticeDraft();
   if (challengeId === MAYRA_CHALLENGE.id) {
     const draft = createInitialDraft();
     return { ...draft, kind: "sql", testing: { ...draft.testing, code: "", rows: [] } };
@@ -53,17 +57,25 @@ function createDraftForChallenge(challengeId) {
 }
 
 function getChallenge(challengeId) {
+  if (challengeId === PRACTICE_CHALLENGE.id) return PRACTICE_CHALLENGE;
   if (challengeId === MAYRA_CHALLENGE.id) return MAYRA_CHALLENGE;
   return challengeId === GENERAL_CHALLENGE.id ? GENERAL_CHALLENGE : CHALLENGE;
 }
 
 function stepsForChallenge(challengeId) {
+  if (challengeId === PRACTICE_CHALLENGE.id) return PRACTICE_STEPS;
   if (challengeId === MAYRA_CHALLENGE.id) return MAYRA_STEPS;
   return challengeId === GENERAL_CHALLENGE.id ? GENERAL_STEPS : STEPS;
 }
 
 function createHistoryRecord(challenge, draft) {
   const completedAt = draft.completedAt || new Date().toISOString();
+  if (challenge.id === PRACTICE_CHALLENGE.id) {
+    return {
+      id: draft.id, challengeId: challenge.id, title: challenge.title, ticket: challenge.ticket,
+      completedAt, verdict: "Práctica completada", ...practiceTotals(draft), draft,
+    };
+  }
   return {
     id: `${challenge.id}-${Date.now()}`,
     challengeId: challenge.id,
@@ -79,19 +91,33 @@ function createHistoryRecord(challenge, draft) {
   };
 }
 
+function initializeWorksim() {
+  const state = loadWorksimState();
+  const openPractice = new URLSearchParams(window.location.search).get("desafio") === PRACTICE_CHALLENGE.id;
+  if (!openPractice) return { ...state, activeStep: 0 };
+  const draft = state.drafts[PRACTICE_CHALLENGE.id]?.started
+    ? state.drafts[PRACTICE_CHALLENGE.id] : createPracticeDraft(true);
+  return {
+    ...state,
+    drafts: { ...state.drafts, [PRACTICE_CHALLENGE.id]: draft },
+    activeChallengeId: PRACTICE_CHALLENGE.id,
+    activeStep: getPracticeStep(draft),
+  };
+}
+
 export default function App() {
-  const [initialState] = useState(loadWorksimState);
+  const [initialState] = useState(initializeWorksim);
   const [drafts, setDrafts] = useState(() => initialState.drafts || {
     [CHALLENGE.id]: initialState.draft || createInitialDraft(),
   });
   const [history, setHistory] = useState(initialState.history);
   const [workspaceSection, setWorkspaceSection] = useState(workspace.defaultSection);
   const [activeChallengeId, setActiveChallengeId] = useState(() => (
-    [CHALLENGE.id, GENERAL_CHALLENGE.id, MAYRA_CHALLENGE.id].includes(initialState.activeChallengeId)
+    [CHALLENGE.id, GENERAL_CHALLENGE.id, MAYRA_CHALLENGE.id, PRACTICE_CHALLENGE.id].includes(initialState.activeChallengeId)
       ? initialState.activeChallengeId
       : CHALLENGE.id
   ));
-  const [activeStep, setActiveStep] = useState(0);
+  const [activeStep, setActiveStep] = useState(initialState.activeStep);
   const [notice, setNotice] = useState(
     initialState.error ? { message: initialState.error, variant: "warning" } : null,
   );
@@ -99,9 +125,10 @@ export default function App() {
   const activeChallenge = getChallenge(activeChallengeId);
   const isGeneral = activeChallengeId === GENERAL_CHALLENGE.id;
   const isMayra = activeChallengeId === MAYRA_CHALLENGE.id;
+  const isPractice = activeChallengeId === PRACTICE_CHALLENGE.id;
   const steps = stepsForChallenge(activeChallengeId);
   const draft = drafts[activeChallengeId] || createDraftForChallenge(activeChallengeId);
-  const maxUnlockedStep = isMayra ? getMayraStep(draft) : getUnlockedStep(draft);
+  const maxUnlockedStep = isPractice ? getPracticeStep(draft) : isMayra ? getMayraStep(draft) : getUnlockedStep(draft);
 
   const setDraft = (update) => {
     const challengeId = activeChallengeId;
@@ -122,6 +149,20 @@ export default function App() {
       });
     }
   }, [drafts, activeChallengeId, history]);
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const practiceInUrl = url.searchParams.get("desafio") === PRACTICE_CHALLENGE.id;
+    const showingPractice = isPractice && activeStep > 0;
+    if (showingPractice === practiceInUrl) return;
+    if (showingPractice) {
+      url.searchParams.set("desafio", PRACTICE_CHALLENGE.id);
+      url.hash = "";
+    } else {
+      url.searchParams.delete("desafio");
+    }
+    window.history.replaceState(window.history.state, "", url);
+  }, [isPractice, activeStep]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -167,6 +208,10 @@ export default function App() {
 
   const goToWorkspaceHome = () => {
     if (activeStep > 0) {
+      if (isPractice) {
+        leavePractice();
+        return;
+      }
       moveTo(0);
       return;
     }
@@ -204,6 +249,10 @@ export default function App() {
     const selectedDraft = drafts[challengeId] || createDraftForChallenge(challengeId);
     setActiveChallengeId(challengeId);
     if (selectedDraft.started && !selectedDraft.completedAt) {
+      if (challengeId === PRACTICE_CHALLENGE.id) {
+        moveTo(getPracticeStep(selectedDraft));
+        return;
+      }
       if (challengeId === MAYRA_CHALLENGE.id) {
         moveTo(getMayraStep(selectedDraft));
         return;
@@ -230,7 +279,8 @@ export default function App() {
     }
     setDrafts((current) => ({
       ...current,
-      [challengeId]: { ...createDraftForChallenge(challengeId), started: true },
+      [challengeId]: challengeId === PRACTICE_CHALLENGE.id
+        ? createPracticeDraft(true) : { ...createDraftForChallenge(challengeId), started: true },
     }));
     moveTo(1);
   };
@@ -387,6 +437,21 @@ export default function App() {
     moveTo(steps.length - 1);
   };
 
+  const leavePractice = () => {
+    if (!draft.completedAt && getPracticeStep(draft) === PRACTICE_CLOSING_STEP) {
+      if (!canCompletePractice(draft)) {
+        moveTo(PRACTICE_CLOSING_STEP);
+        setNotice({ message: "Responde la pregunta de seguridad para volver al portal.", variant: "info" });
+        return;
+      }
+      const completedDraft = { ...draft, completedAt: new Date().toISOString() };
+      const record = createHistoryRecord(activeChallenge, completedDraft);
+      setDraft(completedDraft);
+      setHistory(current => [record, ...current.filter(item => item.id !== record.id)]);
+    }
+    moveTo(0);
+  };
+
   const updateReflection = (key, value) => {
     setDraft((current) => ({
       ...current,
@@ -407,7 +472,20 @@ export default function App() {
   };
 
   const copySummary = async () => {
-    const summary = (isGeneral
+    const audit = isPractice ? scoreDetection(draft.attempts.withdrawal.lines) : null;
+    const summary = (isPractice
+      ? [
+        "WORKSIM · Práctica de SQL y Python",
+        `Seguridad antes y después: ${draft.before} → ${draft.after} de 5`,
+        ...exercises.map(exercise => {
+          const { user, ai } = draft.attempts[exercise.id].comparison;
+          return `${exercise.title} · Mi código ${user.passed}/${user.total} · IA ${ai.passed}/${ai.total}`;
+        }),
+        `Hallazgos de Python: ${audit.hits} de ${audit.total}`,
+        `Cómo me sentí: ${draft.feel || "—"}`,
+        `Comentario: ${draft.note || "—"}`,
+      ]
+      : isGeneral
       ? [
         `WORKSIM · ${activeChallenge.ticket}`,
         `Decisión: ${verdictLabel(draft.testing.verdict)}`,
@@ -440,7 +518,9 @@ export default function App() {
       challenge: activeChallenge,
       exportedAt: new Date().toISOString(),
       draft,
-      disclaimer: isMayra
+      disclaimer: isPractice
+        ? "SQL y Python se ejecutaron en el navegador con datos ficticios."
+        : isMayra
         ? "La consulta se ejecutó en SQLite con datos ficticios."
         : isGeneral
         ? "Prototipo educativo; la retroalimentación se calcula a partir de una simulación guiada."
@@ -493,6 +573,18 @@ export default function App() {
   );
 
   const currentPage = () => {
+    if (isPractice && activeStep > 0) {
+      return <PracticeChallengePage
+        step={activeStep}
+        draft={draft}
+        onUpdate={setDraft}
+        onNext={() => moveTo(activeStep + 1)}
+        onBack={() => moveTo(activeStep - 1)}
+        onHome={leavePractice}
+        onExport={exportEvidence}
+        onCopy={copySummary}
+      />;
+    }
     if (isMayra && activeStep > 0) {
       return <MayraChallengePage
         step={activeStep}
@@ -647,7 +739,7 @@ export default function App() {
         workspaceSection={workspaceSection}
         onWorkspaceSectionChange={changeWorkspaceSection}
         steps={steps}
-        profileName={activeStep > 0 && (isGeneral || isMayra) ? "Participante" : workspace.profileName}
+        profileName={activeStep > 0 && (isGeneral || isMayra || isPractice) ? "Participante" : workspace.profileName}
         profileRole={activeStep > 0 ? activeChallenge.role : workspace.profileRole}
       />
       <main className={activeStep > 0 ? "page-shell practice-page" : "page-shell"}>
@@ -658,7 +750,7 @@ export default function App() {
         <span>
           ENV_ID: #WS-SIM-PROD-01 · ESTADO: {activeStep === 0
             ? `ESPACIO ${workspace.label.toUpperCase()}`
-            : draft.completedAt ? "PRÁCTICA COMPLETADA" : "LISTO PARA INICIO"}
+            : draft.completedAt ? "PRÁCTICA COMPLETADA" : "PRÁCTICA EN CURSO"}
         </span>
         <span>WORKSIM · Proyecto i3lab · Practica con criterio. Crece con confianza.</span>
       </footer>

@@ -1,6 +1,5 @@
 import ActionButton from "../components/ActionButton";
 import ContentCard from "../components/ContentCard";
-import Icon from "../components/Icon";
 import PageActions from "../components/PageActions";
 import PageIntro from "../components/PageIntro";
 import {
@@ -29,17 +28,18 @@ export default function GeneralVerificationPage({
       <PageIntro
         eyebrow="ETAPA 4 DE 6 · VERIFICACIÓN"
         title="Contrasta cada afirmación"
-        description="Clasifica lo que dice el resumen y registra una observación concreta. No hay respuestas reveladas durante esta revisión."
+        description="Lee las notas, clasifica cada afirmación del resumen y registra la evidencia que sostiene tu observación."
       >
         <span className="simulation-label"><i /> Fuentes disponibles</span>
       </PageIntro>
 
-      <details className="general-notes-reference">
-        <summary><Icon name="file" size={16} /> Consultar notas originales durante la verificación</summary>
-        <ol>{GENERAL_MEETING_NOTES.map((line) => <li key={line}>{line}</li>)}</ol>
-      </details>
+      <div className="exercise-workbench">
+        <ContentCard className="exercise-source">
+          <h2>Notas originales</h2>
+          <ol className="exercise-notes">{GENERAL_MEETING_NOTES.map((line) => <li key={line}>{line}</li>)}</ol>
+        </ContentCard>
 
-      <div className="general-claim-list">
+        <div className="general-claim-list">
         {GENERAL_CLAIMS.map((claim, index) => {
           const observation = observations.get(claim.id) || { classification: "", evidence: "" };
           return (
@@ -73,6 +73,7 @@ export default function GeneralVerificationPage({
             </ContentCard>
           );
         })}
+        </div>
       </div>
 
       <ContentCard className="general-omission-card">

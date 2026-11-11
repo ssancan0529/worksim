@@ -6,6 +6,7 @@ import {
   GENERAL_CHALLENGE,
   STORAGE_KEY,
 } from "../data/scenario.js";
+import { normalizePracticeDraft } from "../practica/state.mjs";
 
 function isRecord(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -17,6 +18,7 @@ function text(value) {
 
 export function normalizeDraft(value) {
   const raw = isRecord(value) ? value : {};
+  if (raw.kind === "practice") return normalizePracticeDraft(raw);
   const analysis = isRecord(raw.analysis) ? raw.analysis : {};
   const investigation = isRecord(raw.investigation) ? raw.investigation : {};
   const testing = isRecord(raw.testing) ? raw.testing : {};

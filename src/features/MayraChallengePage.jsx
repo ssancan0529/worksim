@@ -1,10 +1,14 @@
 import { useEffect, useState } from "react";
 import ActionButton from "../components/ActionButton";
 import ContentCard from "../components/ContentCard";
+import CriterionStatus from "../components/CriterionStatus";
+import ExerciseEditor from "../components/ExerciseEditor";
+import ExerciseGuide from "../components/ExerciseGuide";
 import Field from "../components/Field";
 import PageActions from "../components/PageActions";
 import PageIntro from "../components/PageIntro";
 import { AI_QUERY, EXPECTED_ROWS, MAYRA_CHALLENGE, MAYRA_STEPS, TRANSACTIONS } from "../data/mayra";
+import { queryGuide } from "../data/exerciseGuides";
 import { runMayraQuery, runMayraSql } from "../lib/mayraSql";
 
 function TransactionTable({ rows, caption }) {
@@ -29,6 +33,10 @@ function SqlWorkspace({ code, onChange }) {
   const [results, setResults] = useState(null);
   const [error, setError] = useState("");
   const [executedQuery, setExecutedQuery] = useState("");
+  const firstResult = results?.[0];
+  const idIndex = firstResult?.columns.findIndex(column => column.toLowerCase() === "id") ?? -1;
+  const matchesIds = idIndex >= 0 && results.length === 1 && firstResult.values.length === EXPECTED_ROWS.length
+    && firstResult.values.every((row, index) => row[idIndex] === EXPECTED_ROWS[index][0]);
 
   async function execute() {
     setRunning(true);
@@ -49,8 +57,9 @@ function SqlWorkspace({ code, onChange }) {
     <section className="sql-workspace" aria-labelledby="sql-workspace-title">
       <h3 id="sql-workspace-title">Prueba tu propia consulta SQL</h3>
       <p>Escribe o modifica una consulta sobre la tabla <code>transacciones</code>. Sus columnas son <code>id</code>, <code>ciudad</code>, <code>tipo</code>, <code>estado</code> y <code>monto</code>.</p>
-      <Field id="mayra-sql-editor" label="Tu consulta SQL" value={code} onChange={onChange} rows={7} placeholder="SELECT * FROM transacciones;" />
-      <div className="sql-workspace-actions">
+      <ExerciseEditor id="mayra-sql-editor" label="Tu consulta SQL" file="consulta.sql" value={code}
+        onChange={onChange} onRun={() => { if (!running && code.trim()) execute(); }} placeholder="SELECT * FROM transacciones;" />
+      <div className="sql-workspace-actions exercise-editor-actions">
         <ActionButton variant="secondary" disabled={running} onClick={() => onChange(AI_QUERY)}>Cargar consulta de IA</ActionButton>
         <ActionButton disabled={running || !code.trim()} onClick={execute} icon="play">{running ? "Ejecutando…" : "Ejecutar mi consulta"}</ActionButton>
       </div>
@@ -60,6 +69,9 @@ function SqlWorkspace({ code, onChange }) {
         {results && (
           <>
             <p><strong>Resultado de tu consulta</strong>{executedQuery !== code && " · Editaste el SQL. Ejecútalo para actualizar el resultado."}</p>
+            {executedQuery === code && (
+              <div className="exercise-criterion-heading"><strong>IDs del encargo en el orden esperado</strong><CriterionStatus passed={matchesIds} /></div>
+            )}
             {results.length === 0 && <p>La consulta devolvió cero filas.</p>}
             {results.map((result, index) => (
               <div className="table-scroll" key={index}>
@@ -122,9 +134,10 @@ export default function MayraChallengePage({
   return (
     <div className="practice-form">
       <PageIntro eyebrow={`ETAPA ${step} DE 4 · ${MAYRA_STEPS[step].label.toUpperCase()}`} title={MAYRA_CHALLENGE.title} />
+      {step === 1 && <ExerciseGuide {...queryGuide} />}
       {step === 1 && (
         <ContentCard>
-          <h2>Tu primer encargo en Datos</h2>
+          <h2>Tu encargo</h2>
           <p>Tu supervisora te pide revisar una consulta generada por IA antes de enviar un reporte. Debe listar las <strong>transferencias confirmadas de Guayaquil de $100 o más</strong>, ordenadas por ID.</p>
           <TransactionTable rows={TRANSACTIONS} caption="Muestra de transacciones ficticias" />
           <Field id="mayra-estimate" label="¿Cuántas filas esperas que cumplan el encargo?" hint="Anota tu estimación antes de ver el SQL. Escribe un número del 0 al 7." value={analysis.approach} onChange={(approach) => onUpdate((current) => ({
@@ -173,6 +186,7 @@ export default function MayraChallengePage({
           {testing.ran && (
             <>
               <TransactionTable rows={returned} caption={`Resultado de SQLite · ${returned.length} filas`} />
+              <div className="exercise-criterion-heading"><strong>Filas de la IA que cumplen el encargo</strong><CriterionStatus passed={testing.results[0]?.passed} /></div>
               <label className="general-select-field">
                 <span>¿Qué recomendarías a tu supervisora?</span>
                 <select value={testing.verdict} onChange={(event) => {

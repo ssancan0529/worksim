@@ -1,5 +1,6 @@
 import ActionButton from "../components/ActionButton";
 import ContentCard from "../components/ContentCard";
+import CriterionStatus from "../components/CriterionStatus";
 import Field from "../components/Field";
 import Icon from "../components/Icon";
 import PageActions from "../components/PageActions";
@@ -41,7 +42,7 @@ export default function GeneralReportPage({
       </PageIntro>
 
       <section className="report-summary">
-        <div><span className="eyebrow">COMPROBACIONES</span><strong>{feedback.passed.length} de {feedback.results.length} coinciden</strong><span>Incluye revisión de información omitida</span></div>
+        <div><span className="eyebrow">COMPROBACIONES</span><strong>{feedback.passed.length} de {feedback.results.length} criterios cumplidos</strong><span>Incluye revisión de información omitida</span></div>
         <div><span className="eyebrow">DECISIÓN</span><strong>{decisionLabels[draft.testing.verdict] || "Sin decisión"}</strong><span>Basada en la evidencia registrada</span></div>
         <div><span className="eyebrow">APRENDIZAJE</span><strong>Práctica sin nota</strong><span>{history.length} práctica{history.length === 1 ? "" : "s"} guardada{history.length === 1 ? "" : "s"}</span></div>
       </section>
@@ -56,7 +57,7 @@ export default function GeneralReportPage({
             <article className={`general-feedback-item ${result.passed ? "matched" : "review"}`} key={result.id}>
               <span className="feedback-icon"><Icon name={result.passed ? "circle-check" : "circle-alert"} /></span>
               <div>
-                <h3>{result.name}</h3>
+                <div className="exercise-criterion-heading"><h3>{result.name}</h3><CriterionStatus passed={result.passed} /></div>
                 {result.id === "omission" ? (
                   <>
                     <p><strong>Tu observación:</strong> {result.observed || "No se registró una omisión."}</p>
