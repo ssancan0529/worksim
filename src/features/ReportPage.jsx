@@ -21,7 +21,7 @@ export default function ReportPage({
   return (
     <>
       <PageIntro
-        eyebrow="ETAPA 5 DE 5 · TU APRENDIZAJE"
+        eyebrow="INFORME DE APRENDIZAJE"
         title={`Informe de desempeño profesional: Desafío #${CHALLENGE.ticket} ${draft.completedAt ? "completado" : ""}`}
         description="Retroalimentación formativa basada en tus acciones, pruebas y justificación. No es una calificación ni una certificación de competencias."
       >
@@ -113,7 +113,7 @@ export default function ReportPage({
       </details>
 
       <PageActions className="report-actions">
-        <ActionButton variant="secondary" onClick={onBack} icon="arrow-left" iconPosition="left">Volver a Pruebas</ActionButton>
+        <ActionButton variant="secondary" onClick={onBack} icon="arrow-left" iconPosition="left">Volver al ejercicio</ActionButton>
         <ActionButton variant="secondary" onClick={onCopy} icon="copy">Copiar resumen</ActionButton>
         <ActionButton variant="secondary" onClick={onExport} icon="download">Descargar evidencia JSON</ActionButton>
         <ActionButton onClick={onRestart} icon="arrow-right">Volver a Desafíos</ActionButton>

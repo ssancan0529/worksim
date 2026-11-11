@@ -1,6 +1,9 @@
 import ActionButton from "../components/ActionButton";
 import ContentCard from "../components/ContentCard";
-import PageActions from "../components/PageActions";
+import ExerciseDecision from "../components/ExerciseDecision";
+import ExerciseGuide from "../components/ExerciseGuide";
+import CriterionStatus from "../components/CriterionStatus";
+import Field from "../components/Field";
 import PageIntro from "../components/PageIntro";
 import {
   GENERAL_CLAIMS,
@@ -9,12 +12,13 @@ import {
 import { GENERAL_CLASSIFICATIONS } from "../lib/generalChallenge";
 
 export default function GeneralVerificationPage({
-  testing,
+  draft,
   onObservationChange,
   onOmissionChange,
   onBack,
-  onContinue,
+  onVerify, onUpdate, onDecisionChange, onFinish,
 }) {
+  const { testing, analysis, investigation } = draft;
   const observations = new Map(
     testing.observations.map((observation) => [observation.claimId, observation]),
   );
@@ -25,20 +29,38 @@ export default function GeneralVerificationPage({
 
   return (
     <>
-      <PageIntro
-        eyebrow="ETAPA 4 DE 6 · VERIFICACIÓN"
-        title="Contrasta cada afirmación"
-        description="Lee las notas, clasifica cada afirmación del resumen y registra la evidencia que sostiene tu observación."
-      >
-        <span className="simulation-label"><i /> Fuentes disponibles</span>
-      </PageIntro>
-
+      <PageIntro title="El informe que no coincide" description="Prepara una actualización breve para el equipo y contrástala con el resumen de IA." />
+      <ExerciseGuide items={[["Acuerdo", "Distingue las decisiones confirmadas de las propuestas."], ["Evidencia", "Identifica quién se comprometió, qué acordó y qué queda pendiente."]]} />
       <div className="exercise-workbench">
         <ContentCard className="exercise-source">
-          <h2>Notas originales</h2>
-          <ol className="exercise-notes">{GENERAL_MEETING_NOTES.map((line) => <li key={line}>{line}</li>)}</ol>
+          <h2>Tu encargo</h2>
+          <p>Lee las notas y resume los acuerdos, responsables y condiciones pendientes del piloto.</p>
+          <ol className="exercise-notes">{GENERAL_MEETING_NOTES.map(line => <li key={line}>{line}</li>)}</ol>
         </ContentCard>
-
+        <ContentCard>
+          <Field id="own-summary" label="Tu resumen" value={analysis.approach} rows={7}
+            placeholder="Escribe tu versión para el equipo…"
+            onChange={approach => onUpdate(current => ({ ...current, analysis: { ...current.analysis, approach } }))} />
+          <details className="exercise-hint"><summary>Ver pista</summary><p>Comprueba qué debe ocurrir antes de confirmar el piloto.</p></details>
+        </ContentCard>
+      </div>
+      <ContentCard>
+        <h2>Resultado de tu revisión</h2>
+        {testing.ran ? <ul className="exercise-criteria">{testing.results.map(check => (
+          <li key={check.id}><div><strong>{check.name}</strong><CriterionStatus passed={check.passed} /></div>
+            {check.explanation && <details><summary>Ver evidencia</summary><p>{check.explanation}</p><p>{check.source}</p></details>}
+          </li>
+        ))}</ul> : <p className="muted">Compara el resumen con las notas y comprueba tu revisión.</p>}
+      </ContentCard>
+      <ContentCard className="exercise-comparison">
+        <h2>Compara con la IA</h2>
+        {!investigation.reviewed ? <>
+          <p>Escribe tu resumen para ver la propuesta.</p>
+          <ActionButton variant="secondary" disabled={!analysis.approach.trim()}
+            onClick={() => onUpdate(current => ({ ...current, investigation: { ...current.investigation, reviewed: true } }))}>
+            Ver propuesta de la IA
+          </ActionButton>
+        </> : <>
         <div className="general-claim-list">
         {GENERAL_CLAIMS.map((claim, index) => {
           const observation = observations.get(claim.id) || { classification: "", evidence: "" };
@@ -74,9 +96,7 @@ export default function GeneralVerificationPage({
           );
         })}
         </div>
-      </div>
-
-      <ContentCard className="general-omission-card">
+      <div className="general-omission-card">
         <span className="eyebrow">REVISIÓN DE CONTEXTO</span>
         <h2>¿Qué información importante de las notas no aparece en el resumen?</h2>
         <label className="general-evidence-field">
@@ -88,13 +108,13 @@ export default function GeneralVerificationPage({
             rows={3}
           />
         </label>
+      </div>
+      <ActionButton disabled={!ready} onClick={onVerify} icon="check">Comprobar mi revisión</ActionButton>
+      {!ready && <p className="validation-hint">Clasifica las afirmaciones y cita evidencia de las notas.</p>}
+        </>}
       </ContentCard>
-
-      <PageActions>
-        <ActionButton variant="secondary" onClick={onBack} icon="arrow-left" iconPosition="left">Volver a los documentos</ActionButton>
-        <ActionButton onClick={onContinue} disabled={!ready} icon="arrow-right">Guardar verificación y decidir</ActionButton>
-      </PageActions>
-      {!ready && <p className="validation-hint">Clasifica las cuatro afirmaciones y añade una observación con evidencia para cada una y para la información omitida.</p>}
+      <ExerciseDecision testing={testing} ready={testing.ran} onChange={onDecisionChange}
+        onFinish={onFinish} onBack={onBack} options={[["accept", "Aceptar"], ["modify", "Modificar"], ["reject_summary", "Rechazar"]]} />
     </>
   );
 }

@@ -1,134 +1,52 @@
-import PythonExecution from "./PythonExecution";
-import { REQUIREMENTS } from "../data/scenario";
-import ActionButton from "../components/ActionButton";
+import { useState } from "react";
+import ContentCard from "../components/ContentCard";
 import CriterionStatus from "../components/CriterionStatus";
+import ExerciseDecision from "../components/ExerciseDecision";
 import ExerciseEditor from "../components/ExerciseEditor";
-import Field from "../components/Field";
-import Icon from "../components/Icon";
-import PageActions from "../components/PageActions";
+import ExerciseGuide from "../components/ExerciseGuide";
 import PageIntro from "../components/PageIntro";
-import StatusNotice from "../components/StatusNotice";
+import { ORIGINAL_CODE, REQUIREMENTS } from "../data/scenario";
+import PythonExecution from "./PythonExecution";
 
-const verdicts = [
-  ["approve", "Aprobar la implementación generada por la IA sin refactorizar."],
-  ["refactor", "Refactorizar el código y validar los cambios con pruebas."],
-  ["reject", "Descartar la solución por inviabilidad técnica."],
-  ["clarify", "Devolver al equipo por requerimientos que necesitan aclaración."],
+const options = [
+  ["approve", "Aprobar"], ["refactor", "Refactorizar"],
+  ["reject", "Rechazar"], ["clarify", "Pedir una aclaración"],
 ];
 
-export default function TestingPage({
-  testing,
-  onChange,
-  onRun,
-  onResetCode,
-  onBack,
-  onContinue,
-}) {
-  const passedCount = testing.results.filter((result) => result.passed).length;
-  const canFinish = testing.ran && testing.verdict && testing.rationale.trim();
-
+export default function TestingPage({ testing, onChange, onRun, onBack, onContinue }) {
+  const [revealed, setRevealed] = useState(testing.ran);
+  const [busy, setBusy] = useState(false);
   return (
     <>
-      <PageIntro
-        eyebrow="ETAPA 4 DE 5 · EVIDENCIA Y DICTAMEN"
-        title="Pruebas y decisión"
-        description="Contrasta la propuesta con casos de prueba y registra un dictamen técnico respaldado por sus resultados."
-      >
-        <span className="simulation-label"><i /> Simulación controlada</span>
-      </PageIntro>
-
-      <div className="brief-requirements">
-        <strong>Requisitos que guían la validación</strong>
-        <ul>{REQUIREMENTS.map((requirement) => <li key={requirement}>{requirement}</li>)}</ul>
-      </div>
-
-      <div className="testing-layout">
-        <section className="content-card sandbox">
-          <div className="panel-heading">
-            <div><span className="eyebrow">SANDBOX DE VALIDACIÓN</span><h2>Pruebas controladas</h2></div>
-            <span className="simulation-label"><i /> Python + revisión estática</span>
-          </div>
-          <p className="muted">Edita la función y ejecútala para observar su salida. También puedes revisar las señales que detecta la suite estática.</p>
-          <ExerciseEditor
-            id="sandbox-code"
-            label="Código Python"
-            file="pets_controller.py"
-            value={testing.code}
-            onChange={(code) => onChange("code", code)}
-            rows={9}
-          />
-          <div className="exercise-editor-actions">
-            <button type="button" className="text-button" onClick={onResetCode}><Icon name="reset" size={14} /> Restaurar propuesta IA</button>
-          </div>
-          <PythonExecution code={testing.code} />
-          <h3>Revisión estática de requisitos</h3>
-          <p className="field-hint">Estas comprobaciones buscan patrones en el texto del código. Sus resultados alimentan el informe del reto.</p>
-          <ActionButton variant="secondary" onClick={onRun} icon="play">Ejecutar revisión estática</ActionButton>
-
-          {testing.ran ? (
-            <div className="test-results" aria-live="polite">
-              <div className="results-heading">
-                <h3>Resultados de esta revisión</h3>
-                <span>{passedCount} de {testing.results.length} criterios cumplidos</span>
-              </div>
-              {testing.results.map((result) => (
-                <article className="test-result" key={result.id}>
-                  <Icon
-                    name={result.passed ? "circle-check" : "circle-x"}
-                    className={result.passed ? "passed" : "failed"}
-                  />
-                  <div><strong>{result.name}</strong><p>{result.detail}</p></div>
-                  <CriterionStatus passed={result.passed} />
-                </article>
-              ))}
-            </div>
-          ) : (
-            <StatusNotice className="test-placeholder">
-              Edita el texto si lo deseas y ejecuta la suite para ver qué señales encuentra.
-            </StatusNotice>
-          )}
-        </section>
-
-        <section className="content-card verdict-card">
-          <span className="eyebrow">DICTAMEN TÉCNICO PARA PRODUCCIÓN</span>
-          <h2>¿Qué decisión recomendarías?</h2>
-          <div className="verdict-options" role="radiogroup" aria-label="Dictamen técnico">
-            {verdicts.map(([value, label]) => (
-              <label className={`verdict-option ${testing.verdict === value ? "chosen" : ""}`} key={value}>
-                <input
-                  type="radio"
-                  name="verdict"
-                  value={value}
-                  checked={testing.verdict === value}
-                  onChange={() => onChange("verdict", value)}
-                />
-                <span>{label}</span>
-              </label>
-            ))}
-          </div>
-          <Field
-            id="rationale"
-            label="Justificación técnica para el supervisor (Carlos Méndez)"
-            hint="Cita al menos un resultado o requisito del briefing que sostenga tu recomendación."
-            value={testing.rationale}
-            onChange={(value) => onChange("rationale", value)}
-            placeholder="Explica tu decisión y qué evidencia la respalda."
-            rows={5}
-            required
-          />
-          {!canFinish && (
-            <p className="inline-hint">
-              <Icon name="info" size={15} />
-              Ejecuta la suite, selecciona un dictamen y escribe su justificación para avanzar.
-            </p>
-          )}
-        </section>
-      </div>
-
-      <PageActions>
-        <ActionButton variant="secondary" onClick={onBack} icon="arrow-left" iconPosition="left">Volver a Investigación IA</ActionButton>
-        <ActionButton onClick={onContinue} disabled={!canFinish} icon="arrow-right">Finalizar y ver Informe</ActionButton>
-      </PageActions>
+      <PageIntro eyebrow="ADOPTA+ · PYTHON" title="Un problema en producción"
+        description="Implementa el listado de mascotas y comprueba el resultado antes de contrastarlo con la IA." />
+      <ExerciseGuide items={[["filter", "Aplica las condiciones al conjunto de mascotas."], ["order_by", "Define el orden de prioridad y cómo resolver empates."], ["offset y limit", "Seleccionan qué página devolver."]]} />
+      <PythonExecution code={testing.code} onSuccess={onRun} onBusyChange={setBusy}
+        comparisonCode={revealed ? ORIGINAL_CODE : undefined}
+        onReveal={() => setRevealed(true)} canReveal={testing.ran}
+        brief={
+          <ContentCard>
+            <h2>Tu encargo</h2>
+            <p>Escribe <code>list_pets(species=None, city=None, limit=10, offset=0)</code>. Usa la sesión <code>db</code> y el modelo <code>Pet</code>.</p>
+            <ul className="plain-list">{REQUIREMENTS.map(requirement => <li key={requirement}>{requirement}</li>)}</ul>
+          </ContentCard>
+        }>
+        <ExerciseEditor id="sandbox-code" label="Tu función de Python" file="pets_controller.py"
+          value={testing.code} readOnly={busy} onChange={value => onChange("code", value)}
+          placeholder="def list_pets(species=None, city=None, limit=10, offset=0):" />
+        <details className="exercise-hint"><summary>Ver pista</summary><p>Piensa qué operaciones deben ocurrir antes de llamar a <code>.all()</code>.</p></details>
+      </PythonExecution>
+      {testing.ran && <ContentCard>
+        <h2>Revisión de requisitos del código</h2>
+        <p className="muted">Esta revisión busca señales en el código. Contrástalas con el resultado de la ejecución.</p>
+        <ul className="exercise-criteria">{testing.results.map(result => (
+          <li key={result.id}><div><strong>{result.name}</strong><CriterionStatus passed={result.passed} /></div>
+            <details><summary>Ver evidencia</summary><p>{result.detail}</p></details>
+          </li>
+        ))}</ul>
+      </ContentCard>}
+      <ExerciseDecision testing={testing} options={options} onChange={onChange}
+        onFinish={onContinue} onBack={onBack} ready={testing.ran && revealed && !busy} />
     </>
   );
 }

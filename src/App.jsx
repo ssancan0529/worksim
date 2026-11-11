@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getMayraStep, MAYRA_CHALLENGE, MAYRA_STEPS } from "./data/mayra";
+import { MAYRA_CHALLENGE } from "./data/mayra";
 import MayraChallengePage from "./features/MayraChallengePage";
 import AppHeader from "./components/AppHeader";
 import StatusNotice from "./components/StatusNotice";
@@ -8,26 +8,16 @@ import {
   createInitialDraft,
   createInitialGeneralDraft,
   GENERAL_CHALLENGE,
-  GENERAL_STEPS,
-  ORIGINAL_CODE,
-  STEPS,
 } from "./data/scenario";
-import AnalysisPage from "./features/AnalysisPage";
-import BriefingPage from "./features/BriefingPage";
 import ChallengesPage from "./features/ChallengesPage";
-import GeneralAnalysisPage from "./features/GeneralAnalysisPage";
-import GeneralBriefingPage from "./features/GeneralBriefingPage";
-import GeneralDecisionPage from "./features/GeneralDecisionPage";
-import GeneralInvestigationPage from "./features/GeneralInvestigationPage";
 import GeneralReportPage from "./features/GeneralReportPage";
 import GeneralVerificationPage from "./features/GeneralVerificationPage";
 import IndividualWorkspacePage from "./features/workspaces/IndividualWorkspacePage";
-import InvestigationPage from "./features/InvestigationPage";
 import PracticeChallengePage from "./features/PracticeChallengePage";
 import ReportPage from "./features/ReportPage";
 import TestingPage from "./features/TestingPage";
 import { evaluateGeneralReview } from "./lib/generalChallenge";
-import { getUnlockedStep, simulateTests, verdictLabel } from "./lib/simulation";
+import { simulateTests, verdictLabel } from "./lib/simulation";
 import { loadWorksimState, saveWorksimState } from "./lib/storage";
 import { getWorkspace } from "./data/workspaces";
 import { exercises, PRACTICE_CHALLENGE, PRACTICE_CLOSING_STEP, PRACTICE_STEPS, scoreDetection } from "./practica/cases.mjs";
@@ -47,13 +37,14 @@ function loadThemePreference() {
 
 function createDraftForChallenge(challengeId) {
   if (challengeId === PRACTICE_CHALLENGE.id) return createPracticeDraft();
+  if (challengeId === GENERAL_CHALLENGE.id) return createInitialGeneralDraft();
+  const draft = createInitialDraft();
+  draft.testing.code = "";
   if (challengeId === MAYRA_CHALLENGE.id) {
-    const draft = createInitialDraft();
-    return { ...draft, kind: "sql", testing: { ...draft.testing, code: "", rows: [] } };
+    draft.kind = "sql";
+    draft.testing.rows = [];
   }
-  return challengeId === GENERAL_CHALLENGE.id
-    ? createInitialGeneralDraft()
-    : createInitialDraft();
+  return draft;
 }
 
 function getChallenge(challengeId) {
@@ -62,10 +53,14 @@ function getChallenge(challengeId) {
   return challengeId === GENERAL_CHALLENGE.id ? GENERAL_CHALLENGE : CHALLENGE;
 }
 
+const GUIDED_STEPS = [
+  { path: "desafios", label: "Desafíos" },
+  { path: "practicar", label: "Ejercicio" },
+  { path: "informe", label: "Informe" },
+];
+
 function stepsForChallenge(challengeId) {
-  if (challengeId === PRACTICE_CHALLENGE.id) return PRACTICE_STEPS;
-  if (challengeId === MAYRA_CHALLENGE.id) return MAYRA_STEPS;
-  return challengeId === GENERAL_CHALLENGE.id ? GENERAL_STEPS : STEPS;
+  return challengeId === PRACTICE_CHALLENGE.id ? PRACTICE_STEPS : GUIDED_STEPS;
 }
 
 function createHistoryRecord(challenge, draft) {
@@ -128,7 +123,7 @@ export default function App() {
   const isPractice = activeChallengeId === PRACTICE_CHALLENGE.id;
   const steps = stepsForChallenge(activeChallengeId);
   const draft = drafts[activeChallengeId] || createDraftForChallenge(activeChallengeId);
-  const maxUnlockedStep = isPractice ? getPracticeStep(draft) : isMayra ? getMayraStep(draft) : getUnlockedStep(draft);
+  const maxUnlockedStep = isPractice ? getPracticeStep(draft) : draft.completedAt ? 2 : 1;
 
   const setDraft = (update) => {
     const challengeId = activeChallengeId;
@@ -253,28 +248,7 @@ export default function App() {
         moveTo(getPracticeStep(selectedDraft));
         return;
       }
-      if (challengeId === MAYRA_CHALLENGE.id) {
-        moveTo(getMayraStep(selectedDraft));
-        return;
-      }
-      const resumeAt = challengeId === GENERAL_CHALLENGE.id
-        ? selectedDraft.testing.ran
-          ? 5
-          : selectedDraft.investigation.reviewed
-            ? 4
-            : selectedDraft.analysis.saved
-              ? 3
-              : selectedDraft.briefingRead
-                ? 2
-                : 1
-        : selectedDraft.investigation.reviewed
-          ? 4
-          : selectedDraft.analysis.saved
-            ? 3
-            : selectedDraft.briefingRead
-              ? 2
-              : 1;
-      moveTo(resumeAt);
+      moveTo(1);
       return;
     }
     setDrafts((current) => ({
@@ -283,48 +257,6 @@ export default function App() {
         ? createPracticeDraft(true) : { ...createDraftForChallenge(challengeId), started: true },
     }));
     moveTo(1);
-  };
-
-  const updateAnalysis = (key, value) => {
-    setDraft((current) => ({
-      ...current,
-      analysis: { ...current.analysis, [key]: value, saved: false },
-    }));
-  };
-
-  const saveAnalysis = () => {
-    setDraft((current) => ({
-      ...current,
-      analysis: { ...current.analysis, saved: true },
-    }));
-    moveTo(3);
-  };
-
-  const readBriefing = () => {
-    setDraft((current) => ({ ...current, briefingRead: true }));
-    moveTo(2);
-  };
-
-  const updateInvestigation = (key, value, checked) => {
-    setDraft((current) => {
-      const investigation = { ...current.investigation, reviewed: false };
-      if (key === "hypotheses") {
-        const hypotheses = [...investigation.hypotheses];
-        hypotheses[value] = checked;
-        investigation.hypotheses = hypotheses;
-      } else {
-        investigation[key] = value;
-      }
-      return { ...current, investigation };
-    });
-  };
-
-  const saveInvestigation = () => {
-    setDraft((current) => ({
-      ...current,
-      investigation: { ...current.investigation, reviewed: true },
-    }));
-    moveTo(4);
   };
 
   const updateTesting = (key, value) => {
@@ -399,7 +331,6 @@ export default function App() {
         },
       };
     });
-    setNotice({ message: "Suite simulada completada.", variant: "success" });
   };
 
   const saveGeneralVerification = () => {
@@ -422,7 +353,6 @@ export default function App() {
         },
       };
     });
-    moveTo(5);
   };
 
   const finishChallenge = () => {
@@ -457,18 +387,6 @@ export default function App() {
       ...current,
       reflection: { ...current.reflection, [key]: value },
     }));
-  };
-
-  const copyCode = async () => {
-    try {
-      await navigator.clipboard.writeText(ORIGINAL_CODE);
-      setNotice({ message: "Propuesta copiada al portapapeles.", variant: "success" });
-    } catch {
-      setNotice({
-        message: "No se pudo copiar el código. Selecciónalo para copiarlo manualmente.",
-        variant: "warning",
-      });
-    }
   };
 
   const copySummary = async () => {
@@ -590,8 +508,7 @@ export default function App() {
         step={activeStep}
         draft={draft}
         onUpdate={setDraft}
-        onBack={() => moveTo(activeStep - 1)}
-        onContinue={() => moveTo(activeStep + 1)}
+        onBack={() => moveTo(0)}
         onFinish={finishChallenge}
         onHome={() => moveTo(0)}
         onExport={exportEvidence}
@@ -625,101 +542,17 @@ export default function App() {
         );
       case 1:
         return isGeneral
-          ? <GeneralBriefingPage onBack={() => moveTo(0)} onContinue={readBriefing} />
-          : <BriefingPage onBack={() => moveTo(0)} onContinue={readBriefing} />;
-      case 2:
-        return isGeneral
-          ? (
-            <GeneralAnalysisPage
-              analysis={draft.analysis}
-              onChange={updateAnalysis}
-              onBack={() => moveTo(1)}
-              onContinue={saveAnalysis}
-            />
-          )
-          : (
-            <AnalysisPage
-              analysis={draft.analysis}
-              onChange={updateAnalysis}
-              onBack={() => moveTo(1)}
-              onContinue={saveAnalysis}
-            />
-          );
-      case 3:
-        return isGeneral
-          ? (
-            <GeneralInvestigationPage
-              analysis={draft.analysis}
-              onBack={() => moveTo(2)}
-              onContinue={saveInvestigation}
-            />
-          )
-          : (
-            <InvestigationPage
-              analysis={draft.analysis}
-              investigation={draft.investigation}
-              onChange={updateInvestigation}
-              onCopyCode={copyCode}
-              onBack={() => moveTo(2)}
-              onContinue={saveInvestigation}
-            />
-          );
-      case 4:
-        return isGeneral
-          ? (
-            <GeneralVerificationPage
-              testing={draft.testing}
-              onObservationChange={updateGeneralObservation}
-              onOmissionChange={updateGeneralOmission}
-              onBack={() => moveTo(3)}
-              onContinue={saveGeneralVerification}
-            />
-          )
-          : (
-            <TestingPage
-              testing={draft.testing}
-              onChange={updateTesting}
-              onRun={runTests}
-              onResetCode={() => updateTesting("code", ORIGINAL_CODE)}
-              onBack={() => moveTo(3)}
-              onContinue={finishChallenge}
-            />
-          );
-      case 5:
-        return isGeneral
-          ? (
-            <GeneralDecisionPage
-              testing={draft.testing}
-              onChange={updateTesting}
-              onBack={() => moveTo(4)}
-              onContinue={finishChallenge}
-            />
-          )
-          : (
-            <ReportPage
-              draft={draft}
-              history={history}
-              onReflectionChange={updateReflection}
-              onBack={() => moveTo(4)}
-              onRestart={returnToChallenges}
-              onCopy={copySummary}
-              onExport={exportEvidence}
-            />
-          );
-      case 6:
-        return isGeneral
-          ? (
-            <GeneralReportPage
-              draft={draft}
-              history={history}
-              onReflectionChange={updateReflection}
-              onBack={() => moveTo(5)}
-              onRestart={returnToChallenges}
-              onCopy={copySummary}
-              onExport={exportEvidence}
-            />
-          )
-          : null;
+          ? <GeneralVerificationPage draft={draft} onUpdate={setDraft}
+              onObservationChange={updateGeneralObservation} onOmissionChange={updateGeneralOmission}
+              onVerify={saveGeneralVerification} onDecisionChange={updateTesting}
+              onBack={() => moveTo(0)} onFinish={finishChallenge} />
+          : <TestingPage testing={draft.testing} onChange={updateTesting} onRun={runTests}
+              onBack={() => moveTo(0)} onContinue={finishChallenge} />;
+      case 2: {
+        const Report = isGeneral ? GeneralReportPage : ReportPage;
+        return <Report draft={draft} history={history} onReflectionChange={updateReflection}
+          onBack={() => moveTo(1)} onRestart={returnToChallenges} onCopy={copySummary} onExport={exportEvidence} />;
+      }
       default:
         return null;
     }

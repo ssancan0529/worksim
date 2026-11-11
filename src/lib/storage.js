@@ -52,7 +52,7 @@ export function normalizeDraft(value) {
       reviewed: investigation.reviewed === true,
     },
     testing: {
-      code: text(testing.code) || (kind === "technical" ? createInitialDraft().testing.code : ""),
+      code: typeof testing.code === "string" ? testing.code : (kind === "technical" ? createInitialDraft().testing.code : ""),
       ran: testing.ran === true,
       results: Array.isArray(testing.results) ? testing.results : [],
       verdict: text(testing.verdict),

@@ -31,7 +31,7 @@ export default function GeneralReportPage({
   return (
     <>
       <PageIntro
-        eyebrow="ETAPA 6 DE 6 · INFORME DE APRENDIZAJE"
+        eyebrow="INFORME DE APRENDIZAJE"
         title={`${GENERAL_CHALLENGE.title}${draft.completedAt ? " · completado" : ""}`}
         description="Revisa cómo contrastaste las afirmaciones, qué fuentes respaldaron tu decisión y qué información relevante detectaste."
       >
@@ -120,7 +120,7 @@ export default function GeneralReportPage({
       <details className="content-card trace-card">
         <summary><Icon name="history" /> Revisar el proceso</summary>
         <div className="trace-content">
-          <p><strong>Análisis inicial:</strong> {draft.analysis.approach || "Sin respuesta."}</p>
+          <p><strong>Tu resumen:</strong> {draft.analysis.approach || "Sin respuesta."}</p>
           <p><strong>Riesgos previstos:</strong> {draft.analysis.risks || "Sin respuesta."}</p>
           <p><strong>Verificaría:</strong> {draft.analysis.checks || "Sin respuesta."}</p>
           <p><strong>Decisión:</strong> {decisionLabels[draft.testing.verdict] || "Sin decisión"} · {draft.testing.rationale || "Sin justificación."}</p>
@@ -130,7 +130,7 @@ export default function GeneralReportPage({
       <p className="small-note general-report-note">WORKSIM evalúa el proceso con resultados simulados; no asigna una calificación ni certifica competencias.</p>
 
       <PageActions className="report-actions">
-        <ActionButton variant="secondary" onClick={onBack} icon="arrow-left" iconPosition="left">Volver a Decisión</ActionButton>
+        <ActionButton variant="secondary" onClick={onBack} icon="arrow-left" iconPosition="left">Volver al ejercicio</ActionButton>
         <ActionButton variant="secondary" onClick={onCopy} icon="copy">Copiar resumen</ActionButton>
         <ActionButton variant="secondary" onClick={onExport} icon="download">Descargar evidencia JSON</ActionButton>
         <ActionButton onClick={onRestart} icon="arrow-right">Volver a Desafíos</ActionButton>

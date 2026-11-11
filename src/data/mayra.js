@@ -5,7 +5,7 @@ export const MAYRA_CHALLENGE = {
   company: "Banco Horizonte",
   role: "Analista de datos en prácticas",
   profession: "Análisis de datos",
-  description: "Estima el resultado de una consulta SQL generada por IA, ejecútala paso a paso y comprueba qué filas devuelve.",
+  description: "Escribe una consulta para el Banco Horizonte, verifica qué filas devuelve y compárala con la propuesta de IA.",
   duration: 15,
   level: "Básico",
   environment: "SQL / SQLite",
