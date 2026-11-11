@@ -14,6 +14,7 @@ import GeneralReportPage from "./features/GeneralReportPage";
 import GeneralVerificationPage from "./features/GeneralVerificationPage";
 import IndividualWorkspacePage from "./features/workspaces/IndividualWorkspacePage";
 import PracticeChallengePage from "./features/PracticeChallengePage";
+import ProjectsPage from "./features/workspaces/ProjectsPage";
 import ReportPage from "./features/ReportPage";
 import TestingPage from "./features/TestingPage";
 import { evaluateGeneralReview } from "./lib/generalChallenge";
@@ -106,7 +107,11 @@ export default function App() {
     [CHALLENGE.id]: initialState.draft || createInitialDraft(),
   });
   const [history, setHistory] = useState(initialState.history);
-  const [workspaceSection, setWorkspaceSection] = useState(workspace.defaultSection);
+  const [workspaceSection, setWorkspaceSection] = useState(() => (
+    initialState.activeStep === 0 && new URLSearchParams(window.location.search).get("seccion") === "proyectos"
+      ? "projects"
+      : workspace.defaultSection
+  ));
   const [activeChallengeId, setActiveChallengeId] = useState(() => (
     [CHALLENGE.id, GENERAL_CHALLENGE.id, MAYRA_CHALLENGE.id, PRACTICE_CHALLENGE.id].includes(initialState.activeChallengeId)
       ? initialState.activeChallengeId
@@ -149,15 +154,23 @@ export default function App() {
     const url = new URL(window.location.href);
     const practiceInUrl = url.searchParams.get("desafio") === PRACTICE_CHALLENGE.id;
     const showingPractice = isPractice && activeStep > 0;
-    if (showingPractice === practiceInUrl) return;
-    if (showingPractice) {
-      url.searchParams.set("desafio", PRACTICE_CHALLENGE.id);
-      url.hash = "";
-    } else {
-      url.searchParams.delete("desafio");
+    const projectsInUrl = url.searchParams.get("seccion") === "proyectos";
+    const showingProjects = activeStep === 0 && workspaceSection === "projects";
+    if (showingPractice === practiceInUrl && showingProjects === projectsInUrl) return;
+    if (showingPractice !== practiceInUrl) {
+      if (showingPractice) {
+        url.searchParams.set("desafio", PRACTICE_CHALLENGE.id);
+        url.hash = "";
+      } else {
+        url.searchParams.delete("desafio");
+      }
+    }
+    if (showingProjects !== projectsInUrl) {
+      if (showingProjects) url.searchParams.set("seccion", "proyectos");
+      else url.searchParams.delete("seccion");
     }
     window.history.replaceState(window.history.state, "", url);
-  }, [isPractice, activeStep]);
+  }, [isPractice, activeStep, workspaceSection]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -519,6 +532,9 @@ export default function App() {
     }
     switch (activeStep) {
       case 0:
+        if (workspaceSection === "projects") {
+          return <ProjectsPage profileName={workspace.profileName} />;
+        }
         if (workspaceSection === "explorer") {
           return (
             <ChallengesPage

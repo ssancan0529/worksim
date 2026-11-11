@@ -9,6 +9,7 @@ export const WORKSPACES = [
     defaultSection: "explorer",
     sections: [
       { id: "explorer", label: "Explorador", icon: "search" },
+      { id: "projects", label: "Proyectos", icon: "briefcase" },
       { id: "progress", label: "Progreso", icon: "sparkles" },
       { id: "history", label: "Historial", icon: "history" },
       { id: "reports", label: "Informes", icon: "file" },
