@@ -7,7 +7,6 @@ import {
   AVAILABLE_CATEGORIES,
   AVAILABLE_CHALLENGES,
   CATALOG_STATUS,
-  FEATURED_UPCOMING_CATEGORY_IDS,
   PLANNED_CHALLENGES,
   PROFESSIONAL_CATEGORIES,
 } from "../data/catalog";
@@ -132,9 +131,8 @@ export default function ChallengesPage({
   const hasFilters = hasActiveCatalogFilters(filters);
   const showResults = isSearching || hasFilters;
   const selectedCategory = PROFESSIONAL_CATEGORIES.find((category) => category.id === selectedCategoryId);
-  const upcomingCategories = FEATURED_UPCOMING_CATEGORY_IDS
-    .map((id) => PROFESSIONAL_CATEGORIES.find((category) => category.id === id))
-    .filter((category) => category && !AVAILABLE_CATEGORIES.some((available) => available.id === category.id));
+  const upcomingCategories = PROFESSIONAL_CATEGORIES.filter(category =>
+    !AVAILABLE_CATEGORIES.some(available => available.id === category.id));
   const completed = Object.values(progress).some((item) => item.completed);
 
   function getProgress(challenge) {
@@ -305,11 +303,11 @@ export default function ChallengesPage({
 
       {!isSearching && (
         <section className="catalog-categories" aria-labelledby="catalog-categories-title">
-          <SectionTitle aside={<span className="eyebrow">7 ÁREAS PROFESIONALES</span>}>
+          <SectionTitle aside={<span className="eyebrow">{AVAILABLE_CATEGORIES.length} ÁREAS DISPONIBLES</span>}>
             <span id="catalog-categories-title">Explora por área profesional</span>
           </SectionTitle>
           <div className="category-grid">
-            {PROFESSIONAL_CATEGORIES.map((category) => (
+            {AVAILABLE_CATEGORIES.map((category) => (
               <CategoryCard
                 key={category.id}
                 category={category}
@@ -338,7 +336,6 @@ export default function ChallengesPage({
             ))}
           </div>
           {selectedCategory && previewLocation === "upcoming" && <CategoryDetail category={selectedCategory} />}
-          <p className="catalog-upcoming-note">Negocios, administración y ciencias e ingeniería también forman parte del catálogo explorable.</p>
         </section>
       )}
 

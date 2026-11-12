@@ -81,8 +81,9 @@ export default function AppHeader({
             onNavigate={onNavigate}
           />
         )}
+        <div className="header-actions">
         <label className="header-theme">
-          <span>Tema</span>
+          <span className="sr-only">Tema</span>
           <select
             aria-label="Cambiar tema de apariencia"
             value={theme}
@@ -102,6 +103,7 @@ export default function AppHeader({
             <div className="user-copy"><strong>{profileName}</strong><span>{profileRole}</span></div>
             <span className="avatar"><Icon name="user" size={17} /></span>
           </div>
+        </div>
         </div>
       </div>
       {activeStep === 0 ? (
