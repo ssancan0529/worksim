@@ -57,43 +57,72 @@ Registro de las acciones realizadas durante el desafío para generar informes qu
 
 ## Alcance actual
 
-El proyecto se encuentra en etapa de diseño y prototipado.
+WORKSIM es un prototipo funcional de frontend en **React, JavaScript y Vite**, con áreas de Datos, Software y Comunicación. No tiene backend, cuentas ni autenticación. Los borradores, avances e historial se conservan en `localStorage` del navegador; no se sincronizan entre dispositivos.
 
-El prototipo contempla el flujo de experiencia principal, desde la selección de desafíos hasta la presentación del informe de desempeño.
-El catálogo incluye «El informe que no coincide», una práctica introductoria de pensamiento crítico con seis etapas propias: briefing, análisis, investigación de fuentes, verificación, decisión e informe. Sus resultados son simulados y se guardan por separado del desafío técnico de Adopta+.
+Los escenarios y las propuestas atribuidas a IA están preparados en el código. **No hay una conexión a un modelo externo ni generación de respuestas de IA en vivo.** Un escenario laboral simulado puede incluir ejecución real de código: son conceptos distintos.
 
-**Importante:** algunas interacciones, ejecuciones de pruebas y resultados mostrados en el prototipo son simulados. No representan todavía un entorno real de ejecución de código ni un sistema de evaluación validado.
+### Ejecución y evaluación disponibles
 
-## Ejecutar el prototipo
+| Experiencia | Ejecución | Evaluación actual |
+|---|---|---|
+| «¿Coincide el resultado de la consulta?» — Banco Horizonte | SQL real mediante SQL.js (SQLite en WebAssembly), sobre `transacciones` en memoria. | Comprobaciones deterministas de columnas, IDs seleccionados y orden. |
+| «Práctica de SQL y Python»: Transferencias y Cola de soporte | SQL real mediante SQL.js. | Resultados contrastados con dos conjuntos de datos por ejercicio. |
+| «Práctica de SQL y Python»: Retiros | Python real mediante Pyodide; se llama a `retirar(saldo, monto)`. | Cinco casos con salida y formato esperados. |
+| «Un problema en producción» — Adopta+ | Python real mediante Pyodide, SQLAlchemy y SQLite en memoria; se llama a `list_pets`. | La salida del código es real, pero los criterios del informe siguen usando expresiones regulares sobre el código (`simulateTests`). No son una suite de aserciones sobre esa salida. |
+| «El informe que no coincide» | Escenario y fuentes preparados; no ejecuta SQL ni Python. | Clasificaciones comparadas con respuestas esperadas; detección heurística de palabras en la omisión escrita. |
+| Proyecto «Diagnóstico de ventas» | No ejecuta el SQL ni los archivos del proyecto. | Evidencia estructurada: periodo, duplicados, devoluciones, cálculos e interpretación seleccionada. |
+| Proyecto «API de inventario» | Ejecuta únicamente la función de stock en Python con Pyodide. No levanta una API HTTP. | Diez casos de stock más comprobaciones del contrato y ejemplos declarados. |
+| Proyecto «Campaña de lanzamiento» | No ejecuta código ni publica una campaña. | Reglas sobre público, objetivo, presupuesto, promesa, cobertura, calendario y métricas. |
 
-La interfaz está desarrollada con React y Vite. Para iniciar el servidor local:
+Las evaluaciones de proyectos distinguen resultados completos, parciales, incorrectos y sin evidencia. Permiten corregir y volver a entregar, conservando las entregas anteriores. Las explicaciones abiertas requieren revisión cualitativa: cumplir los campos objetivos y escribir una explicación **no demuestra automáticamente que todo el razonamiento sea correcto**. Las evaluaciones históricas se conservan; algunas fueron realizadas con la rúbrica anterior basada en palabras clave.
+
+Consulta [Ejecución y evaluación](docs/ejecucion-y-evaluacion.md) para conocer motores, límites, conexión y archivos responsables.
+
+## Iniciar el proyecto
+
+Necesitas Node.js y npm. Entorno comprobado para este proyecto: Node.js 24.22.1. Desde la raíz del repositorio:
 
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
-Para generar la versión de producción, ejecuta `npm run build`. Las plantillas editables están en `src/index.html` y `src/practica/index.html`. GitHub Pages publica desde la raíz de `main`. Copia `dist/index.html`, `dist/practica/index.html` y los archivos de `dist/assets/` a sus rutas equivalentes en la raíz en el mismo commit.
+Abre la dirección que indique Vite en la terminal. `npm ci` instala las versiones del archivo `package-lock.json` y requiere acceso al registro de paquetes si no están en caché.
 
-El flujo de seis etapas y el caso de Adopta+ siguen las pantallas de `screens.html`; el análisis, las hipótesis, el dictamen y la reflexión se guardan en el navegador. El historial y la evidencia se pueden consultar y exportar como JSON.
+```bash
+# Pruebas automatizadas existentes
+npm test
 
-El sandbox realiza comprobaciones heurísticas sobre el texto del código editado; no ejecuta Python, no modifica bases de datos y no sustituye pruebas reales. El informe muestra los resultados encontrados y recomendaciones relacionadas, sin asignar una calificación automática.
+# Compilar y revisar la compilación localmente
+npm run build
+npm run preview
+```
+
+`npm test` ejecuta las pruebas de Node del repositorio; no abre un navegador ni garantiza que el CDN de Pyodide esté accesible. Para comprobar Python, ejecuta también un ejercicio desde la interfaz.
+
+Vite genera `dist/`. Las entradas son `src/index.html` y `src/practica/index.html`; la segunda redirige a la práctica integrada. Sirve la aplicación por HTTP/HTTPS: abrir el HTML con `file://` no es una forma compatible de iniciar los workers y módulos.
+
+### Conexión y publicación
+
+- SQL.js y su archivo WASM se incluyen localmente desde `vendor/`; no necesitan un CDN externo para ejecutar SQL una vez disponibles los archivos de la aplicación.
+- Python carga Pyodide 0.27.7 desde jsDelivr. Adopta+ descarga además SQLAlchemy y SQLite a través de Pyodide. Se necesita conexión al CDN cuando estos recursos no están en caché; no hay garantía de funcionamiento sin conexión.
+- Las fuentes Inter y JetBrains Mono se solicitan a Google Fonts. Si no cargan, se usan las fuentes alternativas del CSS.
+- Guardar avances y aplicar reglas de evaluación son operaciones locales. No requieren un servicio remoto de evaluación. No hay un modo offline completo implementado.
+
+Para alojamiento estático puede servirse `dist/`. El repositorio también conserva una copia compilada en la raíz: si se publica esa copia, hay que actualizar `index.html`, `practica/index.html` y `assets/` con sus equivalentes de `dist/` en el mismo commit. Subir un commit no habilita por sí solo GitHub Pages: hay que configurar la fuente de publicación y verificar el despliegue. La vista de exportación de proyectos a GitHub es ilustrativa; no crea ni sincroniza repositorios de los estudiantes.
 
 ### Estructura frontend
 
-- `src/components/`: elementos reutilizables de navegación, iconografía, campos, tarjetas, avisos y controles.
-- `src/features/`: vistas de desafíos, briefing, análisis, investigación, pruebas e informe.
-- `src/data/`: escenario, requisitos y esquema usados por el prototipo.
-- `src/lib/`: persistencia local y reglas de simulación y retroalimentación.
-- `src/App.jsx`: coordina el estado del flujo entre las vistas.
+- `src/components/`: controles y elementos reutilizables.
+- `src/features/`: vistas, editores, ejecución y resultados.
+- `src/data/`: escenarios, datos de práctica y rúbricas.
+- `src/lib/`: persistencia, ejecutores y reglas de evaluación.
+- `src/practica/`: ejercicios SQL/Python, workers y casos de prueba.
+- `vendor/`: motor SQL.js y SQLite WASM incluidos en el repositorio.
+- `src/App.jsx`: coordinación del estado y navegación.
+- `docs/ejecucion-y-evaluacion.md`: alcance técnico y límites de la evaluación.
 
-Las funcionalidades previstas para etapas posteriores incluyen:
-
-- Modo de incidentes de producción.
-- Desafíos de comunicación y habilidades interpersonales.
-- Escenarios de distintas disciplinas profesionales.
-- Historial de desempeño y analítica de competencias.
-- Reportes para instituciones educativas y organizaciones.
+`screens.html`, `style-source.html` y `sql-worker.js` en la raíz son referencias del prototipo anterior; no describen por sí solos el comportamiento de la app React actual. Para cambios funcionales, revisa las rutas de `src/` indicadas en la documentación técnica.
 
 ## Arquitectura conceptual
 
@@ -133,9 +162,9 @@ Esta arquitectura es conceptual y no implica que los componentes estén implemen
 | Diseño del flujo de usuario | Prototipo |
 | Interfaz de desafíos | Prototipo |
 | Investigación de soluciones IA | Prototipo |
-| Sandbox de pruebas | Simulación visual |
-| Evaluación basada en evidencias | Diseño conceptual |
-| Analítica de competencias | Planificada |
+| Sandbox de pruebas | Ejecución SQL y Python en experiencias específicas; revisión heurística en otras |
+| Evaluación basada en evidencias | Reglas deterministas y heurísticas locales; revisión cualitativa pendiente |
+| Seguimiento de avances | Historial y progreso local; no certifica competencias |
 
 ## Contribuciones
 
