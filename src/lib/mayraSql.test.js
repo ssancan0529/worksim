@@ -1,3 +1,4 @@
+import { readOnlyQuery } from "./readOnlySql.js";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
@@ -24,7 +25,7 @@ const source = readFileSync(new URL("./mayraSql.worker.js", import.meta.url), "u
 async function execute(query) {
   let output;
   const context = {
-    wasmUrl: "unused-in-test", TRANSACTIONS, initSqlJs: async () => sqlite,
+    wasmUrl: "unused-in-test", TRANSACTIONS, readOnlyQuery, initSqlJs: async () => sqlite,
     self: { initSqlJs: async () => sqlite, postMessage(value) { output = value; } },
   };
   vm.runInNewContext(source, context);
@@ -81,4 +82,13 @@ test("SQL advancement requires a successful latest run but not a passing score",
     assert.equal(canAdvanceExercise({ code: "   \n\t", preview: partial }), false);
     assert.equal(canAdvanceExercise({}), false);
   }
+});
+
+
+test("SQL read-only rejects writes, PRAGMA bypass and multiple statements", async () => {
+  for (const query of ["DELETE FROM transacciones", "PRAGMA query_only=OFF; DELETE FROM transacciones; SELECT 1", "SELECT 1; PRAGMA query_only=OFF; DELETE FROM transacciones", "WITH x AS (SELECT 1) DELETE FROM transacciones"]) {
+    assert.ok((await execute(query)).error, query);
+  }
+  assert.equal((await execute("SELECT COUNT(*) FROM transacciones")).results[0].values[0][0], 7);
+  assert.equal((await execute("-- comentario\nWITH x AS (SELECT * FROM transacciones) SELECT COUNT(*) FROM x")).results[0].values[0][0], 7);
 });

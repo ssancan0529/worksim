@@ -265,8 +265,8 @@ function PracticeExercise({ exercise, draft, onUpdate, onBack, onNext, onExit, n
               updateAttempt({ code, executedCode: null, preview: null, comparison: null }, true);
             }} />
           <p className="field-hint exercise-start-hint">
-            Escribe lo que sepas para continuar. Tu intento puede estar incompleto o tener errores.
-            {isSql && <> Puedes empezar con <code>SELECT</code>.</>}
+            Ejecuta tu intento para continuar. No necesitas cumplir todos los criterios del encargo.
+            {isSql && <> Puedes empezar con <code>SELECT 1;</code>.</>}
           </p>
           <div className="exercise-editor-actions">
             <ActionButton icon="play" iconPosition="left" disabled={!ready} onClick={() => execute(false)}>
@@ -281,7 +281,7 @@ function PracticeExercise({ exercise, draft, onUpdate, onBack, onNext, onExit, n
             {canAdvance && !readOnly && !busy && <p className="field-hint">Intento registrado. Puedes continuar.</p>}
             {busy === "preview" ? <p className="muted">Ejecutando casos de prueba…</p>
               : error?.target === "preview" ? <StatusNotice variant="warning">{error.message}</StatusNotice>
-                : <ExerciseResult result={result} emptyText="Puedes ejecutar tu código para comprobar los requisitos. La ejecución es opcional." />}
+                : <ExerciseResult result={result} emptyText="Ejecuta tu código para comprobar los requisitos. Puedes avanzar sin cumplirlos todos." />}
           </div>
         </ContentCard>
       </div>
@@ -345,7 +345,7 @@ function PracticeExercise({ exercise, draft, onUpdate, onBack, onNext, onExit, n
         <ActionButton icon="arrow-right" disabled={!canAdvance || Boolean(busy)} onClick={onNext}>{nextLabel}</ActionButton>
       </PageActions>
       {!canAdvance && <p className="validation-hint">
-        Escribe un intento en el editor para avanzar. Basta con empezar tu respuesta.
+        Ejecuta la versión actual sin errores de sintaxis o de carga para avanzar. Los criterios del encargo pueden quedar por revisar.
       </p>}
     </>
   );

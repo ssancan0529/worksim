@@ -3,8 +3,8 @@ import ActionButton from "../components/ActionButton";
 import ContentCard from "../components/ContentCard";
 import { executePython } from "../lib/python";
 
-export default function PythonExecution({ code, children, onSuccess, onBusyChange, comparisonCode, brief, onReveal, canReveal }) {
-  const [parameters, setParameters] = useState({ species: "dog", city: "Guayaquil", limit: "10", offset: "0" });
+export default function PythonExecution({ code, children, onSuccess, onBusyChange, comparisonCode, brief, onReveal, canReveal, initialParameters, onParametersChange, onInvalidate }) {
+  const [parameters, setParameters] = useState(initialParameters || { species: "dog", city: "Guayaquil", limit: "10", offset: "0" });
   const [phase, setPhase] = useState("");
   const [response, setResponse] = useState(null);
   const [executedCode, setExecutedCode] = useState("");
@@ -17,12 +17,15 @@ export default function PythonExecution({ code, children, onSuccess, onBusyChang
     run?.cancel();
   }, []);
 
+  useEffect(() => { setResponse(null); setComparison(null); }, [code]);
+
   const validParameters = /^\d+$/.test(parameters.limit) && /^\d+$/.test(parameters.offset)
     && Number.isSafeInteger(Number(parameters.limit)) && Number.isSafeInteger(Number(parameters.offset));
   const busy = Boolean(phase);
 
   async function run(compare = false) {
     if (activeRun.current || !code.trim() || !validParameters) return;
+    onInvalidate();
     onBusyChange(true);
     setComparison(null);
     setPhase("loading");
@@ -74,7 +77,7 @@ export default function PythonExecution({ code, children, onSuccess, onBusyChang
             {[["species", "Especie"], ["city", "Ciudad"], ["limit", "Límite"], ["offset", "Desplazamiento"]].map(([key, label]) => (
               <label key={key}>
                 <span>{label}</span>
-                <input type={key === "limit" || key === "offset" ? "number" : "text"} min={key === "limit" || key === "offset" ? 0 : undefined} step="1" value={parameters[key]} disabled={busy} onChange={(event) => setParameters({ ...parameters, [key]: event.target.value })} />
+                <input type={key === "limit" || key === "offset" ? "number" : "text"} min={key === "limit" || key === "offset" ? 0 : undefined} step="1" value={parameters[key]} disabled={busy} onChange={(event) => { const next = { ...parameters, [key]: event.target.value }; setParameters(next); onParametersChange(next); setResponse(null); setComparison(null); }} />
               </label>
             ))}
           </div>

@@ -4,7 +4,7 @@ import ExperienceCard from "../../components/ExperienceCard";
 import Icon from "../../components/Icon";
 import { AREA_BY_ID, AREAS } from "../../data/areas";
 import { PORTFOLIO_SAMPLE, PROJECTS } from "../../data/projects";
-import { evaluateProjectSubmission, getProjectProgress } from "../../lib/projects";
+import { evaluateProjectSubmission, getProjectProgress, isNewAcceptedSubmission } from "../../lib/projects";
 import "./projects.css";
 import ProjectEvidence from "../projects/ProjectEvidence";
 import { EVALUATION_LABELS, normalizeEvidence } from "../../lib/projects";
@@ -214,7 +214,7 @@ function ProjectDetail({ project, work, onWorkChange, onBack, onValidActivity, h
         evaluation: work.evaluation,
       }] : [])],
     });
-    if (evaluation.passed) onValidActivity();
+    if (isNewAcceptedSubmission(project, work, evaluation)) onValidActivity();
   }
 
   return (

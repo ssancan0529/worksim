@@ -186,3 +186,14 @@ export function evaluateProjectSubmission(project, answers, evidence = {}, inven
     passed: criteria.every(item => item.passed && item.hasExplanation),
     requiresReview: true, review: rubric.review };
 }
+
+function submissionSignature(project, answers, evidence, code) {
+  return JSON.stringify([normalizeAnswers(answers, project.stages.length), normalizeEvidence(project, evidence), code || '']);
+}
+
+export function isNewAcceptedSubmission(project, work, evaluation) {
+  if (!evaluation.passed) return false;
+  const signature = submissionSignature(project, work.answers, work.evidence, work.inventoryCode);
+  return ![work, ...(work.submissions || [])].some(previous => previous.submittedAt && previous.evaluation?.passed
+    && submissionSignature(project, previous.submittedAnswers, previous.submittedEvidence, previous.submittedInventoryCode) === signature);
+}

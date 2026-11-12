@@ -56,8 +56,8 @@ export default function IndividualWorkspacePage({
       {section === "progress" && (
         <>
           <div className="workspace-metrics">
-            <WorkspaceMetric icon="circle-check" label="DESAFÍOS REALIZADOS" value={completedCount} detail="Completados al 100%" />
-            <WorkspaceMetric icon="briefcase" label="PROYECTOS REALIZADOS" value={completedProjectCount} detail="Entregas aprobadas" />
+            <WorkspaceMetric icon="circle-check" label="DESAFÍOS REALIZADOS" value={completedCount} detail="Experiencias finalizadas" />
+            <WorkspaceMetric icon="briefcase" label="PROYECTOS REALIZADOS" value={completedProjectCount} detail="Validación objetiva cumplida" />
             <WorkspaceMetric icon="sparkles" label="RACHA ACTUAL" value={activeStreak}
               detail={activeStreak === 1 ? "día activo consecutivo" : "días activos consecutivos"} />
           </div>
@@ -76,7 +76,7 @@ export default function IndividualWorkspacePage({
               })}
             </div>
           </WorkspacePanel>
-          <WorkspacePanel title="Tus proyectos" description="La entrega se marca completada solo cuando todos sus criterios están cumplidos en la versión enviada.">
+          <WorkspacePanel title="Tus proyectos" description="Se muestran las entregas con validación objetiva cumplida. Las explicaciones requieren revisión cualitativa.">
             <div className="workspace-entity-list">
               {PROJECTS.map((project) => {
                 const item = projectProgress[project.id] || {};

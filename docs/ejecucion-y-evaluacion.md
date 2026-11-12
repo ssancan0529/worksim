@@ -11,7 +11,7 @@ El motor y el WASM proceden de `vendor/sql-wasm.js` y `vendor/sql-wasm.wasm`. Vi
 **Banco Horizonte — «¿Coincide el resultado de la consulta?»**
 
 - `src/features/MayraChallengePage.jsx` llama a `runMayraSql()` en `src/lib/mayraSql.js`.
-- `src/lib/mayraSql.worker.js` crea `transacciones`, inserta los datos de `src/data/mayra.js` y ejecuta la consulta con `db.exec()` en modo de solo lectura.
+- `src/lib/mayraSql.worker.js` crea `transacciones`, inserta los datos de `src/data/mayra.js` y valida la entrada con `src/lib/readOnlySql.js` antes de ejecutarla con `db.exec()`: una sola sentencia SELECT/WITH que devuelva columnas, con modo de solo lectura activo. Rechaza PRAGMA y lotes de sentencias antes de ejecutarlos.
 - Cada llamada tiene una base nueva que se cierra al terminar. El límite de 10 segundos abarca carga y ejecución; al excederlo se termina el worker.
 - La interfaz utiliza el primer conjunto de resultados. Sus comprobaciones verifican presencia de columnas, selección de IDs y orden ascendente de IDs. No validan exhaustivamente cada valor calculado de cada columna ni todas las consultas equivalentes posibles.
 - Este ejecutor no aplica el límite explícito de 100 filas y 16 columnas del motor de práctica siguiente.
@@ -90,3 +90,12 @@ Si SQL falla al cargar, comprueba que se sirve el directorio compilado completo,
 Para comprobar manualmente los motores, abre un caso SQL y ejecuta una consulta válida y otra con error; ejecuta Retiros y Adopta+ para revisar resultados y errores Python; prueba la función de stock y una reentrega de proyecto, y recarga para comprobar persistencia. No introduzcas datos personales reales en los escenarios de prueba.
 
 Los archivos históricos `screens.html`, `style-source.html` y `sql-worker.js` de la raíz no son los ejecutores actuales de React. Los bundles con hash en `assets/` son compilados, no la fuente para describir o modificar el comportamiento. La ruta `practica/index.html` redirige a la práctica integrada, no a una segunda aplicación independiente.
+
+
+## Actividad y vigencia de resultados
+
+- Abrir secciones no cuenta como actividad. Finalizar un desafío según sus condiciones o entregar un proyecto que cumple la validación objetiva sí cuenta.
+- `src/lib/completion.js` comprueba decisiones válidas y justificación antes de finalizar. Adopta+ exige una ejecución vigente; no exige aprobar todos los criterios heurísticos. Banco Horizonte permite un intento parcial y comparación revisada; la práctica integrada conserva sus condiciones propias de ejecución y confianza posterior.
+- Editar el código de Adopta+ o cambiar sus parámetros elimina los resultados visibles e invalida la ejecución. Los parámetros se guardan junto al borrador. Iniciar otra ejecución también invalida la anterior, incluso si el nuevo intento falla.
+- Una entrega de proyecto idéntica a otra entrega aceptada, actual o histórica, no cuenta nuevamente como actividad. Se compara el contenido de respuestas, evidencia y código; una modificación aceptada sí puede contar. Esto no certifica que el cambio sea sustancial ni evita manipulación de localStorage.
+- `activityStreak.js` registra como máximo un día activo por fecha local, mantiene días consecutivos y reinicia tras una interrupción. La racha se conserva en localStorage junto al progreso.

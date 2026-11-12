@@ -15,17 +15,19 @@ export default function ProjectEvidence({ project, stageIndex, work, onWorkChang
     setBusy(true);
     setError('');
     const code = work.inventoryCode;
-    const job = executePython(code, {}, () => {}, 'inventory');
-    running.current = job;
+    let job;
+    onWorkChange(current => ({ ...current, inventoryRun: null }));
     try {
+      job = executePython(code, {}, () => {}, 'inventory');
+      running.current = job;
       const response = await job.promise;
       if (running.current !== job) return;
       if (response.error) throw new Error(response.error);
       onWorkChange(current => ({ ...current, inventoryRun: { code, results: response.result, at: new Date().toISOString() } }));
     } catch (failure) {
-      if (running.current === job) setError(failure.message);
+      if (!job || running.current === job) setError(failure.message);
     } finally {
-      if (running.current === job) { running.current = null; setBusy(false); }
+      if (!job || running.current === job) { running.current = null; setBusy(false); }
     }
   }
 

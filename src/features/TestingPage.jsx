@@ -21,7 +21,8 @@ export default function TestingPage({ testing, onChange, onRun, onBack, onContin
       <PageIntro eyebrow="ADOPTA+ · PYTHON" title="Un problema en producción"
         description="Implementa el listado de mascotas y comprueba el resultado antes de contrastarlo con la IA." />
       <ExerciseGuide items={[["filter", "Aplica las condiciones al conjunto de mascotas."], ["order_by", "Define el orden de prioridad y cómo resolver empates."], ["offset y limit", "Seleccionan qué página devolver."]]} />
-      <PythonExecution code={testing.code} onSuccess={onRun} onBusyChange={setBusy}
+      <PythonExecution code={testing.code} onSuccess={onRun} onBusyChange={setBusy} initialParameters={testing.parameters}
+        onInvalidate={() => onChange("invalidateRun", null)} onParametersChange={value => onChange("parameters", value)}
         comparisonCode={revealed ? ORIGINAL_CODE : undefined}
         onReveal={() => setRevealed(true)} canReveal={testing.ran}
         brief={
@@ -46,7 +47,7 @@ export default function TestingPage({ testing, onChange, onRun, onBack, onContin
         ))}</ul>
       </ContentCard>}
       <ExerciseDecision testing={testing} options={options} onChange={onChange}
-        onFinish={onContinue} onBack={onBack} ready={testing.ran && revealed && !busy} />
+        onFinish={onContinue} onBack={onBack} ready={testing.ran && testing.executedCode === testing.code && revealed && !busy} />
     </>
   );
 }

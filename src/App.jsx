@@ -1,3 +1,4 @@
+import { canCompleteChallenge } from "./lib/completion";
 import { useEffect, useState } from "react";
 import { MAYRA_CHALLENGE } from "./data/mayra";
 import MayraChallengePage from "./features/MayraChallengePage";
@@ -279,12 +280,13 @@ export default function App() {
 
   const updateTesting = (key, value) => {
     setDraft((current) => {
-      if (key === "code") {
+      if (key === "code" || key === "parameters" || key === "invalidateRun") {
         return {
           ...current,
           testing: {
             ...current.testing,
-            code: value,
+            [key === "parameters" ? "parameters" : "code"]: key === "invalidateRun" ? current.testing.code : value,
+            executedCode: null,
             ran: false,
             results: [],
             verdict: "",
@@ -337,6 +339,7 @@ export default function App() {
         testing: {
           ...current.testing,
           ran: true,
+          executedCode: current.testing.code,
           results,
           runs: [
             ...current.testing.runs,
@@ -376,6 +379,10 @@ export default function App() {
   const finishChallenge = () => {
     if (draft.completedAt) {
       moveTo(steps.length - 1);
+      return;
+    }
+    if (!canCompleteChallenge(draft)) {
+      setNotice({ message: "Completa tu intento y justifica la decisión antes de finalizar.", variant: "info" });
       return;
     }
     const completedAt = new Date().toISOString();

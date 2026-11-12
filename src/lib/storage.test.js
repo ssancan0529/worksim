@@ -127,3 +127,13 @@ test("unexecuted and failed attempts remain locked after reload until they execu
   assert.equal(getPracticeStep(draft), 2);
   assert.equal(canCompletePractice({ ...draft, after: 3 }), false);
 });
+
+test('Python execution identity and parameters survive draft normalization', () => {
+  const code='def list_pets(**kwargs): return []';
+  const parameters={species:'cat',city:'Quito',limit:'2',offset:'1'};
+  const restored=normalizeDraft(JSON.parse(JSON.stringify({kind:'technical',testing:{code,executedCode:code,parameters,ran:true}})));
+  assert.deepEqual(restored.testing.parameters,parameters);
+  assert.equal(restored.testing.executedCode,code);
+  assert.equal(restored.testing.ran,true);
+  assert.equal(normalizeDraft({testing:{code,ran:true}}).testing.executedCode,null);
+});

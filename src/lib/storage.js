@@ -56,6 +56,8 @@ export function normalizeDraft(value) {
     testing: {
       code: typeof testing.code === "string" ? testing.code : (kind === "technical" ? createInitialDraft().testing.code : ""),
       ran: testing.ran === true,
+      executedCode: typeof testing.executedCode === "string" ? testing.executedCode : null,
+      parameters: isRecord(testing.parameters) ? Object.fromEntries(["species", "city", "limit", "offset"].map(key => [key, text(testing.parameters[key])])) : undefined,
       results: Array.isArray(testing.results) ? testing.results : [],
       verdict: text(testing.verdict),
       rationale: text(testing.rationale),

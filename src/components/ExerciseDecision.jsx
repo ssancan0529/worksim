@@ -1,3 +1,4 @@
+import { decisionIsComplete } from "../lib/completion";
 import ActionButton from "./ActionButton";
 import ContentCard from "./ContentCard";
 import Field from "./Field";
@@ -20,7 +21,7 @@ export default function ExerciseDecision({ testing, options, onChange, onFinish,
       </ContentCard>}
       <PageActions>
         <ActionButton variant="secondary" onClick={onBack}>Volver a desafíos</ActionButton>
-        <ActionButton icon="arrow-right" disabled={!ready || !testing.verdict || !testing.rationale.trim()}
+        <ActionButton icon="arrow-right" disabled={!ready || !decisionIsComplete(testing, options.map(([value]) => value))}
           onClick={onFinish}>Guardar y ver informe</ActionButton>
       </PageActions>
     </>

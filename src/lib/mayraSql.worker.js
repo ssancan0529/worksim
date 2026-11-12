@@ -1,3 +1,4 @@
+import { readOnlyQuery } from "./readOnlySql.js";
 import "../../vendor/sql-wasm.js";
 import wasmUrl from "../../vendor/sql-wasm.wasm?url";
 import { TRANSACTIONS } from "../data/mayra";
@@ -15,7 +16,7 @@ self.onmessage = async ({ data: query }) => {
       db.run("INSERT INTO transacciones VALUES (?, ?, ?, ?, ?)", row);
     }
     db.run("PRAGMA query_only = ON");
-    self.postMessage({ results: db.exec(query) });
+    self.postMessage({ results: readOnlyQuery(db, query) });
   } catch (error) {
     self.postMessage({ error: error.message });
   } finally {
