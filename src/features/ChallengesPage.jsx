@@ -112,6 +112,7 @@ export default function ChallengesPage({
   canOpenCurrentReport,
 }) {
   const [query, setQuery] = useState("");
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [filters, setFilters] = useState(INITIAL_FILTERS);
   const [selectedCategoryId, setSelectedCategoryId] = useState(null);
   const [previewLocation, setPreviewLocation] = useState("categories");
@@ -129,6 +130,7 @@ export default function ChallengesPage({
   );
   const isSearching = Boolean(query.trim());
   const hasFilters = hasActiveCatalogFilters(filters);
+  const activeFilterCount = Object.values(filters).filter(value => value !== "all").length;
   const showResults = isSearching || hasFilters;
   const selectedCategory = PROFESSIONAL_CATEGORIES.find((category) => category.id === selectedCategoryId);
   const upcomingCategories = PROFESSIONAL_CATEGORIES.filter(category =>
@@ -188,6 +190,7 @@ export default function ChallengesPage({
           <h2 id="catalog-search-title">¿Qué te gustaría explorar?</h2>
           <p>Busca una profesión, área, habilidad o tema de interés.</p>
         </div>
+        <div className="catalog-search-controls">
         <label className="catalog-search-field">
           <Icon name="search" size={21} />
           <span className="sr-only">Buscar por profesión, área, habilidad o tema</span>
@@ -204,6 +207,12 @@ export default function ChallengesPage({
             </button>
           )}
         </label>
+        <button type="button" className="catalog-filter-toggle" aria-expanded={filtersOpen}
+          aria-controls="catalog-filter-options" onClick={() => setFiltersOpen(open => !open)}>
+          <Icon name="filter" size={17} />
+          Filtros{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
+        </button>
+        </div>
         {!query && (
           <div className="quick-searches" aria-label="Búsquedas sugeridas">
             <span>Explora:</span>
@@ -212,8 +221,7 @@ export default function ChallengesPage({
             ))}
           </div>
         )}
-      </section>
-
+        <div id="catalog-filter-options" hidden={!filtersOpen}>
       <CatalogFilters
         filters={filters}
         onChange={changeFilters}
@@ -223,6 +231,8 @@ export default function ChallengesPage({
         }}
         active={hasFilters}
       />
+        </div>
+      </section>
 
       {!(isSearching && !categoryResults.length && !challengeResults.length && !plannedChallengeResults.length) && (
         <section className="catalog-challenges" id="available-challenges" aria-live="polite">
