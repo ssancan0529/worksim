@@ -489,3 +489,12 @@
 :root[data-theme="dark"] .project-api-board { border-color: var(--line); background: var(--field); color: var(--text); }
 :root[data-theme="dark"] .project-api-board li strong,
 :root[data-theme="dark"] .project-api-board .project-preview-title .icon { color: var(--primary); }
+
+.project-evidence { margin: 18px 0 24px; padding: 16px; border: 1px solid var(--line); border-radius: 10px; background: var(--field); }
+.project-evidence-field { display: flex; flex-direction: column; gap: 6px; margin-top: 13px; font-size: .9rem; }
+.project-evidence-field input, .project-evidence-field select { width: 100%; min-width: 0; min-height: 42px; padding: 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--card); color: var(--text); font: inherit; }
+.project-evidence-field select { white-space: normal; }
+.project-reference { margin: 12px 0 18px; overflow-wrap: anywhere; }
+.project-reference summary { cursor: pointer; color: var(--primary); }
+.project-reference pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+.project-validation-list p { font-size: .85rem; }

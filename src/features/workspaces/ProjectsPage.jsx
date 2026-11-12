@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import ActionButton from "../../components/ActionButton";
 import ExperienceCard from "../../components/ExperienceCard";
 import Icon from "../../components/Icon";
@@ -6,6 +6,8 @@ import { AREA_BY_ID, AREAS } from "../../data/areas";
 import { PORTFOLIO_SAMPLE, PROJECTS } from "../../data/projects";
 import { evaluateProjectSubmission, getProjectProgress } from "../../lib/projects";
 import "./projects.css";
+import ProjectEvidence from "../projects/ProjectEvidence";
+import { EVALUATION_LABELS, normalizeEvidence } from "../../lib/projects";
 
 const salesMonths = [
   { label: "Ene", sales: 8200 },
@@ -73,7 +75,7 @@ function ProjectArea({ project }) {
 }
 
 function ProjectStatus({ progress }) {
-  if (progress.completed) return <span className="project-status complete">Completado</span>;
+  if (progress.completed) return <span className="project-status complete">Validación objetiva cumplida</span>;
   if (progress.needsImprovement) return <span className="project-status needs-improvement">Necesita mejoras</span>;
   if (progress.inProgress) return <span className="project-status in-progress">En curso</span>;
   return <span className="project-status">Sin iniciar</span>;
@@ -125,6 +127,7 @@ function ProjectFiles({ project }) {
 }
 
 function ProjectValidation({ progress }) {
+  const titleId = useId();
   if (!progress.evaluation) {
     return (
       <div className="project-validation" aria-live="polite">
@@ -135,15 +138,15 @@ function ProjectValidation({ progress }) {
   }
 
   return (
-    <section className="project-validation" aria-live="polite" aria-labelledby="project-validation-title">
+    <section className="project-validation" aria-live="polite" aria-labelledby={titleId}>
       <div className="project-validation-heading">
-        <h3 id="project-validation-title">Resultado de la última entrega</h3>
+        <h3 id={titleId}>Resultado de la última entrega</h3>
         <ProjectStatus progress={progress} />
       </div>
       <p>
         {progress.submissionIsCurrent
           ? progress.evaluation.passed
-            ? "Se cumplieron todos los criterios de esta revisión."
+            ? "Se cumplieron las comprobaciones objetivas. La explicación y los entregables abiertos requieren revisión cualitativa."
             : "Revisa los criterios pendientes, ajusta tus respuestas y vuelve a entregar."
           : "Hay cambios posteriores a esta entrega. Revisa la retroalimentación y vuelve a entregar para validar la versión actual."}
       </p>
@@ -153,21 +156,23 @@ function ProjectValidation({ progress }) {
             <div className="project-validation-criterion">
               <strong>{criterion.title}</strong>
               <span className={criterion.passed ? "criterion-passed" : "criterion-pending"}>
-                {criterion.passed ? "Cumplido" : "Necesita mejoras"}
+                {EVALUATION_LABELS[criterion.status] || (criterion.passed ? "Cumplido" : "Necesita mejoras")}
               </span>
             </div>
             <ul>
               {criterion.requirements.map((requirement) => (
                 <li key={requirement.label} className={requirement.passed ? "criterion-passed" : "criterion-pending"}>
-                  {requirement.passed ? "Cumplido: " : "Pendiente: "}{requirement.label}
+                  {requirement.passed ? "Cumplido · " : "Por revisar · "}{requirement.label}
+                  {requirement.feedback && <p>{requirement.feedback}</p>}
                 </li>
               ))}
             </ul>
+            {criterion.review && <p>{criterion.review}</p>}
           </li>
         ))}
       </ul>
       <p className="project-validation-note">
-        La validación automática busca señales en tus respuestas; úsala como guía formativa, no como certificación.
+        {progress.evaluation.version === 2 ? progress.evaluation.review : "Evaluación histórica por palabras clave. Conserva su resultado original. Vuelve a entregar con la nueva evidencia para aplicar la rúbrica actual."}
       </p>
     </section>
   );
@@ -195,12 +200,19 @@ function ProjectDetail({ project, work, onWorkChange, onBack, onValidActivity, h
 
   function submitProject() {
     const submittedAnswers = { ...drafts };
-    const evaluation = evaluateProjectSubmission(project, submittedAnswers);
+    const evaluation = evaluateProjectSubmission(project, submittedAnswers, work.evidence, work.inventoryRun, work.inventoryCode);
     onWorkChange({
       ...work,
       submittedAnswers,
       submittedAt: new Date().toISOString(),
       evaluation,
+      submittedEvidence: normalizeEvidence(project, work.evidence),
+      submittedInventoryCode: work.inventoryCode || "",
+      submissions: [...(work.submissions || []), ...(work.submittedAt ? [{
+        submittedAt: work.submittedAt, submittedAnswers: work.submittedAnswers,
+        submittedEvidence: work.submittedEvidence, submittedInventoryCode: work.submittedInventoryCode,
+        evaluation: work.evaluation,
+      }] : [])],
     });
     if (evaluation.passed) onValidActivity();
   }
@@ -230,6 +242,7 @@ function ProjectDetail({ project, work, onWorkChange, onBack, onValidActivity, h
           <h2 id="project-stage-title" tabIndex={-1} ref={stageHeadingRef}>{stage.title}</h2>
           <p>{stage.description}</p>
           <ul className="plain-list">{stage.tasks.map(task => <li key={task}>{task}</li>)}</ul>
+          <ProjectEvidence key={stageIndex} project={project} stageIndex={stageIndex} work={work} onWorkChange={onWorkChange} />
           <label className="project-draft-label" htmlFor="project-draft">Tu trabajo en esta etapa</label>
           <textarea id="project-draft" rows={5} value={drafts[stageIndex] ?? ""}
             placeholder="Anota cómo abordarías esta etapa…"
@@ -243,6 +256,16 @@ function ProjectDetail({ project, work, onWorkChange, onBack, onValidActivity, h
             <p>{stage.hint}</p>
           </details>
           <ProjectValidation progress={progress} />
+          {work.submissions?.length > 0 && <details className="project-reference">
+            <summary>Entregas anteriores ({work.submissions.length})</summary>
+            {work.submissions.map((submission, index) => <details key={index}>
+              <summary>{new Date(submission.submittedAt).toLocaleString("es")} · Rúbrica {submission.evaluation?.version || 1}</summary>
+              {project.stages.map((item, i) => <section key={i}><h3>{item.title}</h3><p>{submission.submittedAnswers?.[i] || "Sin explicación"}</p></section>)}
+              <pre>{JSON.stringify(submission.submittedEvidence || {}, null, 2)}</pre>
+              {submission.submittedInventoryCode && <pre>{submission.submittedInventoryCode}</pre>}
+              <ProjectValidation progress={{ evaluation: submission.evaluation, submissionIsCurrent: true }} />
+            </details>)}
+          </details>}
           <div className="project-stage-actions">
             {stageIndex > 0 && (
               <ActionButton variant="secondary" icon="arrow-left" iconPosition="left" onClick={() => goToStage(stageIndex - 1)}>

@@ -1,4 +1,4 @@
-export function executePython(code, parameters, onReady) {
+export function executePython(code, parameters, onReady, taskType = "pets") {
   const worker = new Worker(new URL("./python.worker.js", import.meta.url), { type: "module" });
   let timeout;
   let rejectRun;
@@ -31,7 +31,7 @@ export function executePython(code, parameters, onReady) {
       stop();
       reject(new Error(event.message || "No se pudo iniciar Python. Comprueba tu conexión y vuelve a intentarlo."));
     };
-    worker.postMessage({ code, parameters });
+    worker.postMessage({ code, parameters, taskType });
   });
 
   return {
