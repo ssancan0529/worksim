@@ -7,6 +7,8 @@ import {
   STORAGE_KEY,
 } from "../data/scenario.js";
 import { normalizePracticeDraft } from "../practica/state.mjs";
+import { normalizeProjectWork } from "./projects.js";
+import { normalizeActivityStreak } from "./activityStreak.js";
 
 function isRecord(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -95,6 +97,8 @@ export function loadWorksimState() {
         },
         activeChallengeId: CHALLENGE.id,
         history: [],
+        projectWork: normalizeProjectWork(),
+        activityStreak: normalizeActivityStreak(),
         error: "",
       };
     }
@@ -114,6 +118,8 @@ export function loadWorksimState() {
         ? parsed.activeChallengeId
         : CHALLENGE.id,
       history: Array.isArray(parsed.history) ? parsed.history.filter(isRecord) : [],
+      projectWork: normalizeProjectWork(parsed.projectWork),
+      activityStreak: normalizeActivityStreak(parsed.activityStreak),
       error: "",
     };
   } catch {
@@ -124,6 +130,8 @@ export function loadWorksimState() {
       },
       activeChallengeId: CHALLENGE.id,
       history: [],
+      projectWork: normalizeProjectWork(),
+      activityStreak: normalizeActivityStreak(),
       error: "No se pudieron recuperar los datos guardados; inicia una nueva práctica.",
     };
   }

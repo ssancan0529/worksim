@@ -330,7 +330,7 @@ export default function ChallengesPage({
         </section>
       )}
 
-      {!isSearching && (
+      {!isSearching && upcomingCategories.length > 0 && (
         <section className="catalog-upcoming" aria-labelledby="catalog-upcoming-title">
           <SectionTitle aside={<span className="eyebrow">MÁS DISCIPLINAS EN CAMINO</span>}>
             <span id="catalog-upcoming-title">Áreas próximas a incorporarse</span>

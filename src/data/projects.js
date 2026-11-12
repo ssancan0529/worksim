@@ -1,13 +1,10 @@
-export const PROJECT_AREAS = {
-  data: { label: "Análisis de datos", filter: "Datos", icon: "clipboard-list" },
-  software: { label: "Desarrollo de software", filter: "Software", icon: "code" },
-  communication: { label: "Comunicación", filter: "Comunicación", icon: "messages" },
-};
-
 export const PROJECTS = [
   {
     id: "diagnostico-de-ventas",
     area: "data",
+    difficulty: "Intermedio",
+    duration: "4–6 h",
+    tags: ["SQL", "Análisis de datos", "Informes"],
     title: "Diagnóstico de ventas",
     description: "Analiza las ventas de una tienda y recomienda qué productos conviene revisar.",
     brief: "La tienda necesita explicar cómo cambiaron sus ventas en el trimestre. Prepara un análisis que el equipo comercial pueda verificar y usar para decidir.",
@@ -42,10 +39,53 @@ export const PROJECTS = [
         hint: "Acompaña cada recomendación con el dato que la sustenta y el periodo al que corresponde.",
       },
     ],
+    criteria: [
+      {
+        id: "question-and-period",
+        title: "Pregunta e indicador delimitados",
+        stageIndex: 0,
+        requirements: [
+          { label: "Define un periodo de análisis.", terms: ["enero", "febrero", "marzo", "trimestre", "meses"] },
+          { label: "Nombra las ventas o los ingresos.", terms: ["ventas", "vendido", "ingresos"] },
+          { label: "Considera pedidos o transacciones.", terms: ["pedidos", "órdenes", "ordenes", "compras"] },
+        ],
+      },
+      {
+        id: "data-quality",
+        title: "Revisión de calidad de datos",
+        stageIndex: 1,
+        requirements: [
+          { label: "Explica cómo tratar duplicados.", terms: ["duplicado", "duplicados", "repetido", "repetidos"] },
+          { label: "Explica cómo tratar devoluciones.", terms: ["devolución", "devoluciones", "reembolso"] },
+        ],
+      },
+      {
+        id: "analysis-validation",
+        title: "Análisis contrastable",
+        stageIndex: 2,
+        requirements: [
+          { label: "Agrupa los datos por periodo o categoría.", terms: ["agrupar", "agrupación", "por mes", "por categoría"] },
+          { label: "Contrasta los totales con una comprobación.", terms: ["contrastar", "comparar", "consulta de control", "verificar"] },
+        ],
+      },
+      {
+        id: "recommendation-evidence",
+        title: "Recomendación respaldada y reproducible",
+        stageIndex: 3,
+        requirements: [
+          { label: "Incluye un hallazgo o dato concreto.", terms: ["hallazgo", "resultado", "dato", "cifra"] },
+          { label: "Propone una acción.", terms: ["recomendación", "recomiendo", "acción", "revisar"] },
+          { label: "Indica cómo repetir o verificar el análisis.", terms: ["repetir", "reproducir", "consulta", "pasos"] },
+        ],
+      },
+    ],
   },
   {
     id: "api-de-inventario",
     area: "software",
+    difficulty: "Intermedio",
+    duration: "6–8 h",
+    tags: ["Python", "APIs", "Pruebas automatizadas"],
     title: "API de inventario",
     description: "Construye un servicio que registre productos y controle las existencias de una tienda.",
     brief: "El equipo de operaciones necesita un registro de productos con entradas y salidas de stock. Entrega un servicio que otro desarrollador pueda instalar y probar.",
@@ -80,10 +120,57 @@ export const PROJECTS = [
         hint: "Prueba tus instrucciones en una carpeta nueva para detectar pasos que tu entorno ya tenía configurados.",
       },
     ],
+    criteria: [
+      {
+        id: "api-contract",
+        title: "Contrato de la API definido",
+        stageIndex: 0,
+        requirements: [
+          { label: "Identifica el producto y su código.", terms: ["producto", "productos"] },
+          { label: "Define el dato de stock o existencias.", terms: ["stock", "existencias"] },
+          { label: "Describe las operaciones de la API.", terms: ["get", "post", "patch", "ruta", "operación", "operacion"] },
+          { label: "Describe las respuestas de la API.", terms: ["respuesta", "respuestas", "status", "código", "codigo"] },
+        ],
+      },
+      {
+        id: "stock-validation",
+        title: "Servicio y regla de stock descritos",
+        stageIndex: 1,
+        requirements: [
+          { label: "Incluye una operación para consultar/listar productos.", terms: ["get", "listado", "consultar"] },
+          { label: "Incluye una operación para registrar productos.", terms: ["post", "registro", "crear"] },
+          { label: "Valida una salida que excede las existencias.", terms: ["stock", "existencias"] },
+          { label: "Rechaza el stock insuficiente.", terms: ["insuficiente", "no alcanza", "negativo", "rechaza"] },
+        ],
+      },
+      {
+        id: "automated-tests",
+        title: "Pruebas cubren éxito y rechazo sin alterar stock",
+        stageIndex: 2,
+        requirements: [
+          { label: "Prueba una actualización válida.", terms: ["válida", "valida", "correcta", "éxito", "exito"] },
+          { label: "Prueba el caso de stock insuficiente.", terms: ["insuficiente", "no alcanza", "rechazo"] },
+          { label: "Comprueba que el stock no cambie si se rechaza.", terms: ["sin cambiar", "conservar", "mantener", "no cambia"] },
+        ],
+      },
+      {
+        id: "installable-documentation",
+        title: "Entrega documentada y reproducible",
+        stageIndex: 3,
+        requirements: [
+          { label: "Explica cómo instalar o iniciar el servicio.", terms: ["instalar", "instalación", "iniciar", "ejecutar"] },
+          { label: "Indica cómo ejecutar las pruebas.", terms: ["pruebas", "test", "pytest"] },
+          { label: "Incluye un ejemplo de solicitud y respuesta.", terms: ["solicitud", "request", "respuesta", "response"] },
+        ],
+      },
+    ],
   },
   {
     id: "campana-de-lanzamiento",
     area: "communication",
+    difficulty: "Intermedio",
+    duration: "3–4 h",
+    tags: ["Redacción", "Presentaciones", "Métricas"],
     title: "Campaña de lanzamiento",
     description: "Diseña una campaña para un nuevo servicio y define cómo medir su alcance.",
     brief: "Un equipo va a lanzar un servicio de entregas en su ciudad. Necesita una propuesta de mensajes, canales y métricas que pueda presentar al equipo comercial.",
@@ -116,6 +203,46 @@ export const PROJECTS = [
         description: "Prepara una forma de saber si el lanzamiento alcanzó su objetivo.",
         tasks: ["Selecciona un indicador de alcance y uno de respuesta.", "Indica de dónde obtendrás los datos y cuándo los revisarás."],
         hint: "Si el objetivo son solicitudes de información, compara los clics con los formularios recibidos para identificar en qué parte cambia la respuesta.",
+      },
+    ],
+    criteria: [
+      {
+        id: "audience-and-goal",
+        title: "Público y objetivo definidos",
+        stageIndex: 0,
+        requirements: [
+          { label: "Identifica un público concreto.", terms: ["público", "publico", "audiencia", "clientes", "tiendas"] },
+          { label: "Plantea una acción u objetivo medible.", terms: ["objetivo", "meta", "solicitudes", "cotizaciones", "registros", "clics"] },
+        ],
+      },
+      {
+        id: "supported-message",
+        title: "Mensaje claro y respaldado",
+        stageIndex: 1,
+        requirements: [
+          { label: "Incluye una propuesta de valor o beneficio.", terms: ["beneficio", "propuesta de valor", "servicio", "entregas"] },
+          { label: "Incluye un llamado a la acción.", terms: ["cotización", "cotizacion", "solicita", "consulta", "regístrate", "registrate"] },
+          { label: "Evita promesas sin respaldo.", terms: ["brief", "respaldo", "verificar", "comprobable", "confirmado"] },
+        ],
+      },
+      {
+        id: "planned-content",
+        title: "Calendario organizado por canal",
+        stageIndex: 2,
+        requirements: [
+          { label: "Asigna un canal a las publicaciones.", terms: ["canal", "instagram", "facebook", "correo", "redes"] },
+          { label: "Ordena los contenidos en el tiempo.", terms: ["lunes", "martes", "miércoles", "miercoles", "viernes", "semana", "calendario", "anuncio", "demostración", "demostracion"] },
+        ],
+      },
+      {
+        id: "measurement-plan",
+        title: "Medición con fuente y momento de revisión",
+        stageIndex: 3,
+        requirements: [
+          { label: "Define indicadores de alcance y respuesta.", terms: ["alcance", "impresiones", "visitas"] },
+          { label: "Mide una respuesta del público.", terms: ["solicitudes", "clics", "registros", "conversiones", "respuestas"] },
+          { label: "Indica fuente y cuándo revisar los datos.", terms: ["fuente", "registro", "revisar", "día", "semana", "lanzamiento"] },
+        ],
       },
     ],
   },

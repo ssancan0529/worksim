@@ -8,7 +8,7 @@ export const PRACTICE_CHALLENGE = {
   duration: 20,
   level: "Básico",
   environment: "SQLite / Python",
-  categoryId: "data-ai",
+  categoryId: "data",
   competencyType: ["Análisis de datos", "Validación técnica", "Resolución de problemas"],
   keywords: ["SQL", "Python", "junior", "ordenamiento", "soporte", "retiros"],
   status: "available",

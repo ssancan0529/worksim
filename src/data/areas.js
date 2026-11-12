@@ -1,0 +1,40 @@
+export const AREAS = [
+  {
+    id: "data",
+    label: "Datos",
+    name: "Datos",
+    filter: "Datos",
+    icon: "brain",
+    status: "available",
+    description: "Análisis de datos, SQL, Python y pensamiento crítico aplicado a datos, con evaluación de inteligencia artificial.",
+    roles: ["Análisis de datos", "Análisis de información", "Reportes basados en datos"],
+    skills: ["SQL", "Python", "Análisis de datos", "Pensamiento crítico aplicado a datos"],
+    competencies: ["Análisis de datos", "Pensamiento crítico", "Resolución de problemas"],
+  },
+  {
+    id: "software",
+    label: "Software",
+    name: "Software",
+    filter: "Software",
+    icon: "code",
+    status: "available",
+    description: "Desarrollo de software, programación, APIs y resolución de problemas técnicos.",
+    roles: ["Desarrollo backend", "Desarrollo frontend", "QA y testing"],
+    skills: ["Programación", "Python", "APIs", "Resolución de problemas técnicos"],
+    competencies: ["Validación técnica", "Análisis crítico", "Resolución de problemas"],
+  },
+  {
+    id: "communication",
+    label: "Comunicación",
+    name: "Comunicación",
+    filter: "Comunicación",
+    icon: "messages",
+    status: "available",
+    description: "Redacción, elaboración de informes, presentaciones y comunicación profesional.",
+    roles: ["Redacción profesional", "Elaboración de informes", "Presentaciones"],
+    skills: ["Redacción", "Síntesis", "Presentación de hallazgos", "Comunicación profesional"],
+    competencies: ["Comunicación", "Pensamiento crítico", "Criterio profesional"],
+  },
+];
+
+export const AREA_BY_ID = Object.fromEntries(AREAS.map((area) => [area.id, area]));

@@ -9,7 +9,7 @@ export const MAYRA_CHALLENGE = {
   duration: 15,
   level: "Básico",
   environment: "SQL / SQLite",
-  categoryId: "data-ai",
+  categoryId: "data",
   competencyType: ["Análisis de datos", "Pensamiento crítico", "Alfabetización en IA"],
   keywords: ["SQL", "consulta", "transacciones", "ejecución paso a paso"],
   status: "available",

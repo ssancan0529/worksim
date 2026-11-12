@@ -7,7 +7,7 @@ const rating = value => confidenceIsValid(value) ? value : null;
 function newAttempt() {
   return {
     code: "", initialCode: null, prediction: "", notes: "", lines: [], none: false,
-    preview: null, comparison: null, predictionLocked: false, runs: [],
+    executedCode: null, preview: null, comparison: null, predictionLocked: false, runs: [],
   };
 }
 
@@ -34,6 +34,7 @@ export function normalizePracticeDraft(raw) {
       notes: string(attempt.notes),
       lines: Array.isArray(attempt.lines) ? attempt.lines.filter(Number.isInteger) : [],
       none: attempt.none === true,
+      executedCode: typeof attempt.executedCode === "string" ? attempt.executedCode : null,
       preview: isObject(attempt.preview) ? attempt.preview : null,
       comparison: isObject(attempt.comparison?.user) && isObject(attempt.comparison?.ai)
         ? attempt.comparison : null,
@@ -54,7 +55,14 @@ export function getAttemptResult(attempt) {
 }
 
 export function canAdvanceExercise(attempt) {
-  return Boolean(string(attempt.code).trim());
+  return Boolean(
+    isObject(attempt)
+    && string(attempt.code).trim()
+    && attempt.executedCode === attempt.code
+    && isObject(attempt.preview)
+    && !attempt.preview.error
+    && Array.isArray(attempt.preview.checks),
+  );
 }
 
 export function attemptResultLabel(attempt) {

@@ -230,15 +230,6 @@
 }
 .project-campaign-grid span { color: var(--muted); }
 
-.project-card-body {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 20px;
-}
-
 .project-area {
   display: inline-flex;
   align-items: center;
@@ -248,10 +239,30 @@
   font-weight: 650;
 }
 
-.project-card-body h3 { font-size: 1.24rem; }
-.project-card-body p { margin: 0; color: var(--muted); font-size: .94rem; }
-.project-card-body .project-card-deliverables { flex: 1; font-size: .81rem; }
-.project-card-body .button { margin-top: 7px; }
+.project-card .experience-card-actions { margin-top: 0; padding-top: 7px; }
+.project-card .experience-card-actions .button { width: 100%; }
+
+.project-status {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 3px 9px;
+  background: var(--surface-low);
+  color: var(--muted);
+  font-size: .75rem;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+.project-status.complete, .criterion-passed { color: var(--green); }
+.project-status.needs-improvement, .criterion-pending { color: var(--danger); }
+.project-status.in-progress { color: var(--primary); }
+
+.project-status.complete { border-color: #b9d8c3; background: #edf7f0; }
+.project-status.needs-improvement { border-color: #e4c6bf; background: #fff3f0; }
+.project-status.in-progress { border-color: #c9d8ce; background: var(--primary-soft); }
 
 .projects-detail-heading { margin: 23px 0 24px; }
 .projects-detail-heading h1 { margin-top: 4px; }
@@ -317,6 +328,7 @@
 
 .project-stage .plain-list { margin: 14px 0 19px; gap: 6px; font-size: .91rem; }
 .project-draft-label { display: block; margin-bottom: 6px; font-size: .88rem; font-weight: 650; }
+.project-draft-note { margin: 5px 0 0 !important; color: var(--muted); font-size: .75rem !important; }
 
 .project-stage textarea {
   display: block;
@@ -333,7 +345,46 @@
 }
 
 .project-stage textarea::placeholder { color: var(--muted); opacity: 1; }
-.project-stage-actions { display: flex; justify-content: flex-end; margin-top: 16px; }
+.project-stage-actions { display: flex; justify-content: space-between; gap: 10px; margin-top: 16px; }
+
+.project-validation {
+  margin-top: 20px;
+  padding: 15px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface-low);
+}
+
+.project-validation h3 { font-size: .98rem; }
+.project-validation p { margin-top: 8px; font-size: .87rem; }
+.project-validation-heading, .project-validation-criterion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.project-validation-list, .project-validation-list ul {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.project-validation-list > li {
+  padding-top: 9px;
+  border-top: 1px solid var(--line);
+}
+
+.project-validation-list ul { gap: 4px; padding-left: 12px; }
+.project-validation-list ul li { font-size: .82rem; }
+.project-validation-note { color: var(--muted); font-size: .76rem !important; }
+
+.project-status.complete { color: var(--green); }
+:root[data-theme="dark"] .project-status.complete { border-color: #365e53; background: #1d3632; }
+:root[data-theme="dark"] .project-status.needs-improvement { border-color: #68443c; background: #3a2826; }
+:root[data-theme="dark"] .project-status.in-progress { border-color: #365e53; background: var(--primary-soft); }
 
 .project-file-list { gap: 0; }
 .project-file-list li {
@@ -413,7 +464,7 @@
   .project-workspace { grid-template-columns: minmax(170px, .85fr) minmax(0, 2fr); }
   .project-workspace > .project-files { grid-column: 1 / -1; }
   .project-grid { gap: 13px; }
-  .project-card-body { padding: 16px; }
+  .project-card .experience-card-body { padding: 16px; }
   .project-preview { padding: 11px; }
 }
 
@@ -431,6 +482,8 @@
   .project-stage-nav ol { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; }
   .project-panel { padding: 16px; }
   .project-filters button { padding-inline: 10px; }
+  .project-stage-actions { flex-direction: column-reverse; }
+  .project-stage-actions .button { width: 100%; }
 }
 
 :root[data-theme="dark"] .project-api-board { border-color: var(--line); background: var(--field); color: var(--text); }

@@ -47,12 +47,14 @@ export default function AppHeader({
   maxUnlockedStep,
   onNavigate,
   onBrandClick,
+  onExitChallenge,
   completed,
-  theme = "auto",
+  theme = "light",
   onThemeChange,
   workspace,
   workspaceSection,
   onWorkspaceSectionChange,
+  showStageNavigation = true,
   steps = STEPS,
   profileName = "Alejandro Mora",
   profileRole = "Backend Jr",
@@ -63,17 +65,13 @@ export default function AppHeader({
         <button
           className="brand"
           onClick={onBrandClick}
-          aria-label={activeStep > 0 ? "Volver a desafíos" : `Ir al inicio de ${workspace.label}`}
+          aria-label={activeStep > 0
+            ? completed ? "Volver al Explorador" : "Salir del desafío"
+            : `Ir al inicio de ${workspace.label}`}
         >
           <span className="brand-name">WORKSIM</span>
-          <span className="brand-slash">/</span>
-          <span className="brand-section">
-            {activeStep > 0
-              ? "Volver a desafíos"
-              : workspace.sections.find((section) => section.id === workspaceSection)?.label}
-          </span>
         </button>
-        {activeStep > 0 && (
+        {activeStep > 0 && showStageNavigation && (
           <Navigation
             steps={steps}
             activeStep={activeStep}
@@ -82,18 +80,28 @@ export default function AppHeader({
           />
         )}
         <div className="header-actions">
-        <label className="header-theme">
-          <span className="sr-only">Tema</span>
-          <select
-            aria-label="Cambiar tema de apariencia"
-            value={theme}
-            onChange={(event) => onThemeChange(event.target.value)}
-          >
-            <option value="auto">Automático</option>
-            <option value="light">Claro</option>
-            <option value="dark">Oscuro</option>
-          </select>
-        </label>
+        {activeStep > 0 && !completed && (
+          <button type="button" className="challenge-exit-button" onClick={onExitChallenge}>
+            <Icon name="arrow-left" size={16} />
+            Salir del Desafío
+          </button>
+        )}
+        {activeStep > 0 && completed && (
+          <button type="button" className="challenge-return-button" onClick={onBrandClick}>
+            <Icon name="arrow-left" size={16} />
+            Volver al Explorador
+          </button>
+        )}
+        <div className="header-theme" role="group" aria-label="Tema de apariencia">
+          <button type="button" className="theme-icon-button" aria-label="Tema claro"
+            aria-pressed={theme === "light"} onClick={() => onThemeChange("light")}>
+            <Icon name="sun" size={18} />
+          </button>
+          <button type="button" className="theme-icon-button" aria-label="Tema oscuro"
+            aria-pressed={theme === "dark"} onClick={() => onThemeChange("dark")}>
+            <Icon name="moon" size={18} />
+          </button>
+        </div>
         <div className="user-status">
           <span className={`status-dot ${activeStep > 0 && completed ? "done" : ""}`} />
           <span className="status-label">
@@ -112,7 +120,7 @@ export default function AppHeader({
           activeSection={workspaceSection}
           onNavigate={onWorkspaceSectionChange}
         />
-      ) : (
+      ) : showStageNavigation ? (
         <Navigation
           steps={steps}
           mobile
@@ -120,7 +128,7 @@ export default function AppHeader({
           maxUnlockedStep={maxUnlockedStep}
           onNavigate={onNavigate}
         />
-      )}
+      ) : null}
     </header>
   );
 }

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { MAYRA_CHALLENGE } from "./data/mayra";
 import MayraChallengePage from "./features/MayraChallengePage";
 import AppHeader from "./components/AppHeader";
+import ExitChallengeDialog from "./components/ExitChallengeDialog";
 import StatusNotice from "./components/StatusNotice";
 import {
   CHALLENGE,
@@ -20,7 +21,10 @@ import TestingPage from "./features/TestingPage";
 import { evaluateGeneralReview } from "./lib/generalChallenge";
 import { simulateTests, verdictLabel } from "./lib/simulation";
 import { loadWorksimState, saveWorksimState } from "./lib/storage";
+import { recordActivity } from "./lib/activityStreak";
 import { getWorkspace } from "./data/workspaces";
+import { PROJECTS } from "./data/projects";
+import { getProjectProgress } from "./lib/projects";
 import { exercises, PRACTICE_CHALLENGE, PRACTICE_CLOSING_STEP, PRACTICE_STEPS, scoreDetection } from "./practica/cases.mjs";
 import { attemptResultLabel, canCompletePractice, createPracticeDraft, getPracticeStep, practiceTotals } from "./practica/state.mjs";
 
@@ -30,9 +34,10 @@ const workspace = getWorkspace("individual");
 function loadThemePreference() {
   try {
     const preference = window.localStorage.getItem(THEME_STORAGE_KEY);
-    return ["auto", "light", "dark"].includes(preference) ? preference : "auto";
+    if (preference === "light" || preference === "dark") return preference;
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   } catch {
-    return "auto";
+    return "light";
   }
 }
 
@@ -107,6 +112,8 @@ export default function App() {
     [CHALLENGE.id]: initialState.draft || createInitialDraft(),
   });
   const [history, setHistory] = useState(initialState.history);
+  const [projectWork, setProjectWork] = useState(initialState.projectWork);
+  const [activityStreak, setActivityStreak] = useState(initialState.activityStreak);
   const [workspaceSection, setWorkspaceSection] = useState(() => (
     initialState.activeStep === 0 && new URLSearchParams(window.location.search).get("seccion") === "proyectos"
       ? "projects"
@@ -121,7 +128,12 @@ export default function App() {
   const [notice, setNotice] = useState(
     initialState.error ? { message: initialState.error, variant: "warning" } : null,
   );
+  const [exitConfirmationOpen, setExitConfirmationOpen] = useState(false);
+  const projectProgress = Object.fromEntries(
+    PROJECTS.map((project) => [project.id, getProjectProgress(project, projectWork[project.id])]),
+  );
   const [theme, setTheme] = useState(loadThemePreference);
+  const recordValidActivity = () => setActivityStreak(current => recordActivity(current));
   const activeChallenge = getChallenge(activeChallengeId);
   const isGeneral = activeChallengeId === GENERAL_CHALLENGE.id;
   const isMayra = activeChallengeId === MAYRA_CHALLENGE.id;
@@ -139,16 +151,21 @@ export default function App() {
     });
   };
 
+  const exitPractice = () => {
+    setWorkspaceSection("explorer");
+    moveTo(0);
+  };
+
   useEffect(() => {
     try {
-      saveWorksimState({ drafts, activeChallengeId, history });
+      saveWorksimState({ drafts, activeChallengeId, history, projectWork, activityStreak });
     } catch {
       setNotice({
         message: "No se pudieron guardar los cambios en este navegador.",
         variant: "error",
       });
     }
-  }, [drafts, activeChallengeId, history]);
+  }, [drafts, activeChallengeId, history, projectWork, activityStreak]);
 
   useEffect(() => {
     const url = new URL(window.location.href);
@@ -174,24 +191,12 @@ export default function App() {
 
   useEffect(() => {
     const root = document.documentElement;
-    const themeMedia = window.matchMedia("(prefers-color-scheme: dark)");
-    const applyTheme = () => {
-      const selectedTheme = theme === "auto"
-        ? themeMedia.matches ? "dark" : "light"
-        : theme;
-      root.dataset.theme = selectedTheme;
-      root.style.colorScheme = selectedTheme;
-    };
-    const handleSystemThemeChange = () => {
-      if (theme === "auto") applyTheme();
-    };
-
-    applyTheme();
-    if (theme === "auto") themeMedia.addEventListener("change", handleSystemThemeChange);
-    return () => themeMedia.removeEventListener("change", handleSystemThemeChange);
+    root.dataset.theme = theme;
+    root.style.colorScheme = theme;
   }, [theme]);
 
   const changeTheme = (preference) => {
+    if (preference !== "light" && preference !== "dark") return;
     setTheme(preference);
     try {
       window.localStorage.setItem(THEME_STORAGE_KEY, preference);
@@ -217,7 +222,7 @@ export default function App() {
   const goToWorkspaceHome = () => {
     if (activeStep > 0) {
       if (isPractice) {
-        leavePractice();
+        exitPractice();
         return;
       }
       moveTo(0);
@@ -377,22 +382,26 @@ export default function App() {
     const completedDraft = { ...draft, completedAt };
     setDraft(completedDraft);
     setHistory((current) => [createHistoryRecord(activeChallenge, completedDraft), ...current]);
+    recordValidActivity();
     moveTo(steps.length - 1);
   };
 
-  const leavePractice = () => {
-    if (!draft.completedAt && getPracticeStep(draft) === PRACTICE_CLOSING_STEP) {
-      if (!canCompletePractice(draft)) {
-        moveTo(PRACTICE_CLOSING_STEP);
-        setNotice({ message: "Responde la pregunta de seguridad para volver al portal.", variant: "info" });
-        return;
-      }
-      const completedDraft = { ...draft, completedAt: new Date().toISOString() };
-      const record = createHistoryRecord(activeChallenge, completedDraft);
-      setDraft(completedDraft);
-      setHistory(current => [record, ...current.filter(item => item.id !== record.id)]);
+  const finishPractice = () => {
+    if (!canCompletePractice(draft)) {
+      moveTo(PRACTICE_CLOSING_STEP);
+      setNotice({ message: "Responde la pregunta de seguridad para finalizar la práctica.", variant: "info" });
+      return;
     }
-    moveTo(0);
+    if (draft.completedAt) {
+      exitPractice();
+      return;
+    }
+    const completedDraft = { ...draft, completedAt: new Date().toISOString() };
+    const record = createHistoryRecord(activeChallenge, completedDraft);
+    setDraft(completedDraft);
+    setHistory(current => [record, ...current.filter(item => item.id !== record.id)]);
+    recordValidActivity();
+    exitPractice();
   };
 
   const updateReflection = (key, value) => {
@@ -474,6 +483,26 @@ export default function App() {
     moveTo(0);
   };
 
+  const requestChallengeExit = () => setExitConfirmationOpen(true);
+
+  const confirmChallengeExit = () => {
+    setDrafts(current => ({
+      ...current,
+      [activeChallengeId]: createDraftForChallenge(activeChallengeId),
+    }));
+    setExitConfirmationOpen(false);
+    setWorkspaceSection("explorer");
+    moveTo(0);
+  };
+
+  const updateProjectWork = (projectId, update) => {
+    setProjectWork(current => {
+      const currentProject = current[projectId] || { answers: {}, submittedAnswers: null, submittedAt: null };
+      const nextProject = typeof update === "function" ? update(currentProject) : update;
+      return { ...current, [projectId]: nextProject };
+    });
+  };
+
   const openReport = () => {
     if (!draft.completedAt) {
       setNotice({
@@ -513,7 +542,9 @@ export default function App() {
         onUpdate={setDraft}
         onNext={() => moveTo(activeStep + 1)}
         onBack={() => moveTo(activeStep - 1)}
-        onHome={leavePractice}
+        onNavigate={navigate}
+        onExit={exitPractice}
+        onComplete={finishPractice}
         onExport={exportEvidence}
         onCopy={copySummary}
       />;
@@ -532,7 +563,8 @@ export default function App() {
     switch (activeStep) {
       case 0:
         if (workspaceSection === "projects") {
-          return <ProjectsPage profileName={workspace.profileName} />;
+          return <ProjectsPage profileName={workspace.profileName} projectWork={projectWork}
+            onProjectWorkChange={updateProjectWork} onValidActivity={recordValidActivity} />;
         }
         if (workspaceSection === "explorer") {
           return (
@@ -554,6 +586,8 @@ export default function App() {
             workspace={workspace}
             section={workspaceSection}
             progress={progress}
+            projectProgress={projectProgress}
+            activityStreak={activityStreak}
             history={history}
             onOpenReport={openReportFor}
           />
@@ -582,7 +616,8 @@ export default function App() {
         activeStep={activeStep}
         maxUnlockedStep={maxUnlockedStep}
         onNavigate={navigate}
-        onBrandClick={goToWorkspaceHome}
+        onBrandClick={activeStep > 0 && !draft.completedAt ? requestChallengeExit : goToWorkspaceHome}
+        onExitChallenge={requestChallengeExit}
         completed={Boolean(draft.completedAt)}
         theme={theme}
         onThemeChange={changeTheme}
@@ -590,12 +625,19 @@ export default function App() {
         workspaceSection={workspaceSection}
         onWorkspaceSectionChange={changeWorkspaceSection}
         steps={steps}
+        showStageNavigation={activeStep === 0}
         profileName={activeStep > 0 && (isGeneral || isMayra || isPractice) ? "Participante" : workspace.profileName}
         profileRole={activeStep > 0 ? activeChallenge.role : workspace.profileRole}
       />
       <main className={activeStep > 0 ? "page-shell practice-page" : "page-shell"}>
         <div className="page-content">{currentPage()}</div>
       </main>
+      {exitConfirmationOpen && activeStep > 0 && (
+        <ExitChallengeDialog
+          onCancel={() => setExitConfirmationOpen(false)}
+          onConfirm={confirmChallengeExit}
+        />
+      )}
       {notice && <StatusNotice className="floating-notice" variant={notice.variant}>{notice.message}</StatusNotice>}
       <footer className="site-footer">
         <span>

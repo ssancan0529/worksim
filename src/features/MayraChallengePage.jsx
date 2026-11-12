@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import ActionButton from "../components/ActionButton";
 import ContentCard from "../components/ContentCard";
 import CriterionStatus from "../components/CriterionStatus";
+import ExerciseTable from "../components/ExerciseTable";
 import ExerciseDecision from "../components/ExerciseDecision";
 import ExerciseEditor from "../components/ExerciseEditor";
 import ExerciseGuide from "../components/ExerciseGuide";
@@ -13,18 +14,6 @@ import { runMayraSql } from "../lib/mayraSql";
 
 const columns = ["id", "ciudad", "tipo", "estado", "monto"];
 const options = [["accept", "Aceptar"], ["modify", "Modificar"], ["reject", "Rechazar"]];
-
-function Rows({ rows, headers = columns, caption }) {
-  return (
-    <div className="table-scroll exercise-table" tabIndex={0} role="region" aria-label={caption}>
-      <table>
-        <caption>{caption}</caption>
-        <thead><tr>{headers.map((column, i) => <th scope="col" key={i}>{column}</th>)}</tr></thead>
-        <tbody>{rows.map((row, i) => <tr key={i}>{row.map((value, j) => <td key={j}>{value === null ? "NULL" : String(value)}</td>)}</tr>)}</tbody>
-      </table>
-    </div>
-  );
-}
 
 function checkRows(result) {
   const rows = result?.values ?? [];
@@ -46,7 +35,7 @@ function SqlResult({ result, error }) {
   if (result === undefined) return <p className="muted">Ejecuta tu código para comprobar los requisitos.</p>;
   return (
     <>
-      {result?.values.length ? <Rows rows={result.values} headers={result.columns} caption="Filas devueltas" />
+      {result?.values.length ? <ExerciseTable columns={result.columns} rows={result.values} caption="Filas devueltas" />
         : <p className="muted">La consulta devolvió cero filas.</p>}
       <ul className="exercise-criteria">
         {checkRows(result).map(check => <li key={check.id}><div><strong>{check.name}</strong><CriterionStatus passed={check.passed} /></div></li>)}
@@ -105,7 +94,7 @@ export default function MayraChallengePage({ step, draft, onUpdate, onBack, onFi
         {testing.ran ? <SqlResult result={{ columns, values: testing.rows }} />
           : <p>Comparación opcional pendiente de ejecutar.</p>}
         <h3>Filas esperadas</h3>
-        <Rows rows={EXPECTED_ROWS} caption="Transferencias que cumplen el encargo" />
+        <ExerciseTable columns={columns} rows={EXPECTED_ROWS} caption="Transferencias que cumplen el encargo" collapsible />
         <p>La propuesta incluye la fila 102, cuyo estado es Pendiente. Verifica el estado de las transferencias antes de entregar el reporte.</p>
       </ContentCard>
       <ContentCard>
@@ -125,34 +114,32 @@ export default function MayraChallengePage({ step, draft, onUpdate, onBack, onFi
     <>
       <PageIntro eyebrow="BANCO HORIZONTE · SQL" title={MAYRA_CHALLENGE.title} />
       <ExerciseGuide items={[["SELECT y FROM", "Elige las columnas y la tabla."], ["WHERE", "Combina los filtros con AND."], ["ORDER BY", "Ordena el resultado por la columna indicada."]]} />
-      <div className="exercise-workbench">
+      <ContentCard className="exercise-brief">
+        <h2>Tu encargo</h2>
+        <p>Lista las transferencias confirmadas de Guayaquil de $100 o más. Devuelve las columnas de la muestra y ordena por ID ascendente.</p>
+        <ExerciseTable columns={columns} rows={TRANSACTIONS} caption="Tabla transacciones" collapsible />
+      </ContentCard>
+      <div className="exercise-code-results">
         <ContentCard>
-          <h2>Tu encargo</h2>
-          <p>Lista las transferencias confirmadas de Guayaquil de $100 o más. Devuelve las columnas de la muestra y ordena por ID ascendente.</p>
-          <Rows rows={TRANSACTIONS} caption="Tabla transacciones" />
+          <ExerciseEditor id="mayra-sql-editor" label="Tu consulta SQL" file="consulta.sql" value={testing.code}
+            placeholder="Escribe tu consulta aquí…" readOnly={Boolean(busy)} onRun={() => execute()}
+            onChange={code => {
+              setResult(undefined);
+              setError("");
+              onUpdate(current => ({ ...current, testing: { ...current.testing, code, ran: false, results: [], rows: [] } }));
+            }} />
+          <p className="field-hint">Escribe lo que sepas para continuar. Tu consulta puede estar incompleta o tener errores.</p>
+          <div className="exercise-editor-actions">
+            <ActionButton icon="play" iconPosition="left" disabled={Boolean(busy) || !testing.code.trim()} onClick={() => execute()}>
+              {busy === "own" ? "Ejecutando…" : "Ejecutar consulta"}
+            </ActionButton>
+            <details className="exercise-hint"><summary>Ver pista</summary><p>Revisa qué condiciones debe cumplir cada fila antes de ordenar.</p></details>
+          </div>
         </ContentCard>
-        <div>
-          <ContentCard>
-            <ExerciseEditor id="mayra-sql-editor" label="Tu consulta SQL" file="consulta.sql" value={testing.code}
-              placeholder="Escribe tu consulta aquí…" readOnly={Boolean(busy)} onRun={() => execute()}
-              onChange={code => {
-                setResult(undefined);
-                setError("");
-                onUpdate(current => ({ ...current, testing: { ...current.testing, code, ran: false, results: [], rows: [] } }));
-              }} />
-            <p className="field-hint">Escribe lo que sepas para continuar. Tu consulta puede estar incompleta o tener errores.</p>
-            <div className="exercise-editor-actions">
-              <ActionButton icon="play" iconPosition="left" disabled={Boolean(busy) || !testing.code.trim()} onClick={() => execute()}>
-                {busy === "own" ? "Ejecutando…" : "Ejecutar consulta"}
-              </ActionButton>
-              <details className="exercise-hint"><summary>Ver pista</summary><p>Revisa qué condiciones debe cumplir cada fila antes de ordenar.</p></details>
-            </div>
-          </ContentCard>
-          <ContentCard>
-            <h2>Resultado de tu código</h2>
-            <div aria-live="polite" aria-busy={Boolean(busy)}><SqlResult result={result} error={error} /></div>
-          </ContentCard>
-        </div>
+        <ContentCard>
+          <h2>Resultado de tu código</h2>
+          <div aria-live="polite" aria-busy={Boolean(busy)}><SqlResult result={result} error={error} /></div>
+        </ContentCard>
       </div>
       <ContentCard className="exercise-comparison">
         <h2>Compara con la IA</h2>

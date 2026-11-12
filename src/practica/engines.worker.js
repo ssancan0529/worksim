@@ -1,4 +1,4 @@
-import scriptUrl from "../../vendor/sql-wasm.js?url";
+import "../../vendor/sql-wasm.js";
 import wasmUrl from "../../vendor/sql-wasm.wasm?url";
 import { loadBrowserPython } from "../lib/pyodideRuntime.js";
 import pythonCases from "./python-cases.py?raw";
@@ -8,10 +8,13 @@ import { evaluateSql } from "./sql-engine.mjs";
 self.onmessage = async ({ data }) => {
   try {
     const exercise = exercises.find(item => item.id === data.id);
+    if (!exercise) throw new Error("No se encontró el ejercicio solicitado.");
     let evaluate;
     if (exercise.language === "SQL") {
-      importScripts(scriptUrl);
-      const SQL = await self.initSqlJs({ locateFile: () => wasmUrl });
+      if (typeof globalThis.initSqlJs !== "function") {
+        throw new Error("No se pudo cargar SQL.js.");
+      }
+      const SQL = await globalThis.initSqlJs({ locateFile: () => wasmUrl });
       evaluate = code => evaluateSql(SQL, exercise.id, code);
     } else {
       const python = await loadBrowserPython();

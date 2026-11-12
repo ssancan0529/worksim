@@ -13,6 +13,8 @@ import {
   ClipboardCheck,
   ClipboardList,
   Code2,
+  ChevronDown,
+  ChevronUp,
   Copy,
   Download,
   Edit3,
@@ -33,6 +35,8 @@ import {
   ShieldCheck,
   Sparkles,
   SquareTerminal,
+  Moon,
+  Sun,
   UserRound,
 } from "lucide-react";
 
@@ -49,6 +53,8 @@ const iconMap = {
   "circle-check": CircleCheck,
   "circle-help": CircleHelp,
   "circle-x": CircleX,
+  "chevron-down": ChevronDown,
+  "chevron-up": ChevronUp,
   "clipboard-check": ClipboardCheck,
   "clipboard-list": ClipboardList,
   code: Code2,
@@ -63,6 +69,7 @@ const iconMap = {
   lightbulb: Lightbulb,
   lock: LockKeyhole,
   messages: MessageCircle,
+  moon: Moon,
   paw: PawPrint,
   palette: Palette,
   play: Play,
@@ -70,6 +77,7 @@ const iconMap = {
   search: Search,
   shield: ShieldCheck,
   sparkles: Sparkles,
+  sun: Sun,
   terminal: SquareTerminal,
   user: UserRound,
 };

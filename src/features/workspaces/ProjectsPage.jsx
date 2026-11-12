@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import ActionButton from "../../components/ActionButton";
+import ExperienceCard from "../../components/ExperienceCard";
 import Icon from "../../components/Icon";
-import { PORTFOLIO_SAMPLE, PROJECT_AREAS, PROJECTS } from "../../data/projects";
+import { AREA_BY_ID, AREAS } from "../../data/areas";
+import { PORTFOLIO_SAMPLE, PROJECTS } from "../../data/projects";
+import { evaluateProjectSubmission, getProjectProgress } from "../../lib/projects";
 import "./projects.css";
 
 const salesMonths = [
@@ -65,24 +68,36 @@ function ProjectPreview({ area }) {
 }
 
 function ProjectArea({ project }) {
-  const area = PROJECT_AREAS[project.area];
+  const area = AREA_BY_ID[project.area];
   return <span className="project-area"><Icon name={area.icon} size={15} />{area.label}</span>;
 }
 
-function ProjectCard({ project, onOpen }) {
+function ProjectStatus({ progress }) {
+  if (progress.completed) return <span className="project-status complete">Completado</span>;
+  if (progress.needsImprovement) return <span className="project-status needs-improvement">Necesita mejoras</span>;
+  if (progress.inProgress) return <span className="project-status in-progress">En curso</span>;
+  return <span className="project-status">Sin iniciar</span>;
+}
+
+function ProjectCard({ project, progress, onOpen }) {
   return (
-    <article className="project-card">
-      <ProjectPreview area={project.area} />
-      <div className="project-card-body">
-        <ProjectArea project={project} />
-        <h3>{project.title}</h3>
-        <p>{project.description}</p>
-        <p className="project-card-deliverables">{project.deliverables.map(({ name }) => name).join(" · ")}</p>
+    <ExperienceCard
+      className="project-card"
+      visual={<ProjectPreview area={project.area} />}
+      area={AREA_BY_ID[project.area].label}
+      areaIcon={AREA_BY_ID[project.area].icon}
+      title={project.title}
+      description={project.description}
+      difficulty={project.difficulty}
+      duration={project.duration}
+      tags={project.tags}
+      status={<ProjectStatus progress={progress} />}
+      actions={
         <button className="button secondary" type="button" onClick={onOpen} aria-label={`Ver proyecto ${project.title}`}>
           Ver proyecto <Icon name="arrow-right" size={16} />
         </button>
-      </div>
-    </article>
+      }
+    />
   );
 }
 
@@ -109,11 +124,62 @@ function ProjectFiles({ project }) {
   );
 }
 
-function ProjectDetail({ project, drafts, onDraftChange, onBack, headingRef }) {
+function ProjectValidation({ progress }) {
+  if (!progress.evaluation) {
+    return (
+      <div className="project-validation" aria-live="polite">
+        <h3>Validación de la entrega</h3>
+        <p>Aún no has entregado este proyecto. Al final de las etapas podrás validar tu trabajo con criterios específicos de esta área.</p>
+      </div>
+    );
+  }
+
+  return (
+    <section className="project-validation" aria-live="polite" aria-labelledby="project-validation-title">
+      <div className="project-validation-heading">
+        <h3 id="project-validation-title">Resultado de la última entrega</h3>
+        <ProjectStatus progress={progress} />
+      </div>
+      <p>
+        {progress.submissionIsCurrent
+          ? progress.evaluation.passed
+            ? "Se cumplieron todos los criterios de esta revisión."
+            : "Revisa los criterios pendientes, ajusta tus respuestas y vuelve a entregar."
+          : "Hay cambios posteriores a esta entrega. Revisa la retroalimentación y vuelve a entregar para validar la versión actual."}
+      </p>
+      <ul className="project-validation-list">
+        {progress.evaluation.criteria.map((criterion) => (
+          <li key={criterion.id}>
+            <div className="project-validation-criterion">
+              <strong>{criterion.title}</strong>
+              <span className={criterion.passed ? "criterion-passed" : "criterion-pending"}>
+                {criterion.passed ? "Cumplido" : "Necesita mejoras"}
+              </span>
+            </div>
+            <ul>
+              {criterion.requirements.map((requirement) => (
+                <li key={requirement.label} className={requirement.passed ? "criterion-passed" : "criterion-pending"}>
+                  {requirement.passed ? "Cumplido: " : "Pendiente: "}{requirement.label}
+                </li>
+              ))}
+            </ul>
+          </li>
+        ))}
+      </ul>
+      <p className="project-validation-note">
+        La validación automática busca señales en tus respuestas; úsala como guía formativa, no como certificación.
+      </p>
+    </section>
+  );
+}
+
+function ProjectDetail({ project, work, onWorkChange, onBack, onValidActivity, headingRef }) {
   const [stageIndex, setStageIndex] = useState(0);
   const stageHeadingRef = useRef(null);
   const focusStage = useRef(false);
   const stage = project.stages[stageIndex];
+  const drafts = work.answers || {};
+  const progress = getProjectProgress(project, work);
 
   useEffect(() => {
     if (!focusStage.current) return;
@@ -121,9 +187,22 @@ function ProjectDetail({ project, drafts, onDraftChange, onBack, headingRef }) {
     stageHeadingRef.current?.focus();
   }, [stageIndex]);
 
-  function goToNextStage() {
+  function goToStage(index) {
+    if (index === stageIndex) return;
     focusStage.current = true;
-    setStageIndex(stageIndex + 1);
+    setStageIndex(index);
+  }
+
+  function submitProject() {
+    const submittedAnswers = { ...drafts };
+    const evaluation = evaluateProjectSubmission(project, submittedAnswers);
+    onWorkChange({
+      ...work,
+      submittedAnswers,
+      submittedAt: new Date().toISOString(),
+      evaluation,
+    });
+    if (evaluation.passed) onValidActivity();
   }
 
   return (
@@ -140,7 +219,7 @@ function ProjectDetail({ project, drafts, onDraftChange, onBack, headingRef }) {
           <ol>
             {project.stages.map(({ title }, index) => (
               <li key={title}>
-                <button type="button" aria-current={index === stageIndex ? "step" : undefined} onClick={() => setStageIndex(index)}>
+                <button type="button" aria-current={index === stageIndex ? "step" : undefined} onClick={() => goToStage(index)}>
                   <span aria-hidden="true">{index + 1}</span>{title}
                 </button>
               </li>
@@ -151,19 +230,31 @@ function ProjectDetail({ project, drafts, onDraftChange, onBack, headingRef }) {
           <h2 id="project-stage-title" tabIndex={-1} ref={stageHeadingRef}>{stage.title}</h2>
           <p>{stage.description}</p>
           <ul className="plain-list">{stage.tasks.map(task => <li key={task}>{task}</li>)}</ul>
-          <label className="project-draft-label" htmlFor="project-draft">Borrador temporal</label>
+          <label className="project-draft-label" htmlFor="project-draft">Tu trabajo en esta etapa</label>
           <textarea id="project-draft" rows={5} value={drafts[stageIndex] ?? ""}
             placeholder="Anota cómo abordarías esta etapa…"
-            onChange={event => onDraftChange(stageIndex, event.target.value)} />
+            onChange={event => onWorkChange({
+              ...work,
+              answers: { ...drafts, [stageIndex]: event.target.value },
+            })} />
+          <p className="project-draft-note">Se guarda automáticamente en este navegador.</p>
           <details className="project-ai" key={stage.title}>
             <summary><Icon name="sparkles" size={17} />Ver ejemplo de apoyo de IA</summary>
             <p>{stage.hint}</p>
           </details>
-          {stageIndex < project.stages.length - 1 && (
-            <div className="project-stage-actions">
-              <ActionButton variant="secondary" icon="arrow-right" onClick={goToNextStage}>Siguiente etapa</ActionButton>
-            </div>
-          )}
+          <ProjectValidation progress={progress} />
+          <div className="project-stage-actions">
+            {stageIndex > 0 && (
+              <ActionButton variant="secondary" icon="arrow-left" iconPosition="left" onClick={() => goToStage(stageIndex - 1)}>
+                Etapa anterior
+              </ActionButton>
+            )}
+            {stageIndex < project.stages.length - 1
+              ? <ActionButton icon="arrow-right" onClick={() => goToStage(stageIndex + 1)}>Siguiente etapa</ActionButton>
+              : <ActionButton icon="check" onClick={submitProject}>
+                  {progress.evaluation ? "Volver a entregar para validar" : "Entregar proyecto para validar"}
+                </ActionButton>}
+          </div>
         </section>
         <ProjectFiles project={project} />
       </div>
@@ -206,10 +297,9 @@ function ProjectPortfolio({ profileName, onBack, headingRef }) {
   );
 }
 
-export default function ProjectsPage({ profileName }) {
+export default function ProjectsPage({ profileName, projectWork, onProjectWorkChange, onValidActivity }) {
   const [view, setView] = useState({ kind: "catalog" });
   const [area, setArea] = useState("all");
-  const [drafts, setDrafts] = useState({});
   const headingRef = useRef(null);
   const focusHeading = useRef(false);
   const visibleProjects = area === "all" ? PROJECTS : PROJECTS.filter(project => project.area === area);
@@ -248,23 +338,24 @@ export default function ProjectsPage({ profileName }) {
             <div className="project-catalog-toolbar">
               <h2 id="project-catalog-title">Proyectos por área</h2>
               <div className="project-filters" role="group" aria-label="Filtrar proyectos por área">
-                {[["all", "Todas"], ...Object.entries(PROJECT_AREAS).map(([id, item]) => [id, item.filter])].map(([id, label]) => (
+                {[["all", "Todas"], ...AREAS.map(({ id, filter }) => [id, filter])].map(([id, label]) => (
                   <button type="button" key={id} aria-pressed={area === id} onClick={() => setArea(id)}>{label}</button>
                 ))}
               </div>
             </div>
             <div className="project-grid">
               {visibleProjects.map(item => (
-                <ProjectCard key={item.id} project={item} onOpen={() => show({ kind: "project", project: item })} />
+                <ProjectCard key={item.id} project={item} progress={getProjectProgress(item, projectWork[item.id])}
+                  onOpen={() => show({ kind: "project", project: item })} />
               ))}
             </div>
           </section>
         </>
       )}
-      {view.kind === "project" && <ProjectDetail key={project.id} project={project} drafts={drafts[project.id] ?? {}}
-        headingRef={headingRef} onBack={backToCatalog} onDraftChange={(stageIndex, text) => setDrafts(current => ({
-          ...current, [project.id]: { ...current[project.id], [stageIndex]: text },
-        }))} />}
+      {view.kind === "project" && <ProjectDetail key={project.id} project={project}
+        work={projectWork[project.id]} headingRef={headingRef} onBack={backToCatalog}
+        onValidActivity={onValidActivity}
+        onWorkChange={update => onProjectWorkChange(project.id, update)} />}
       {view.kind === "portfolio" && <ProjectPortfolio profileName={profileName} onBack={backToCatalog} headingRef={headingRef} />}
     </div>
   );

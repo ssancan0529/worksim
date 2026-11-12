@@ -49,23 +49,7 @@ var initSqlJs = function (moduleConfig) {
             resolveModule(Module);
         });
 
-        // There is a section of code in the emcc-generated code below that looks like this:
-        // (Note that this is lowercase `module`)
-        // if (typeof module !== 'undefined') {
-        //     module['exports'] = Module;
-        // }
-        // When that runs, it's going to overwrite our own modularization export efforts in shell-post.js!
-        // The only way to tell emcc not to emit it is to pass the MODULARIZE=1 or MODULARIZE_INSTANCE=1 flags,
-        // but that carries with it additional unnecessary baggage/bugs we don't want either.
-        // So, we have three options:
-        // 1) We undefine `module`
-        // 2) We remember what `module['exports']` was at the beginning of this function and we restore it later
-        // 3) We write a script to remove those lines of code as part of the Make process.
-        //
-        // Since those are the only lines of code that care about module, we will undefine it. It's the most straightforward
-        // of the options, and has the side effect of reducing emcc's efforts to modify the module if its output were to change in the future.
-        // That's a nice side effect since we're handling the modularization efforts ourselves
-        module = undefined;
+        // The generated CommonJS export is guarded with `typeof module` and is skipped in browser workers.
 
         // The emcc-generated code and shell-post.js code goes below,
         // meaning that all of it runs inside of this promise. If anything throws an exception, our promise will abort
@@ -173,16 +157,4 @@ if(0<K)Sa=Yc;else{if(f.preRun)for("function"==typeof f.preRun&&(f.preRun=[f.preR
   return initSqlJsPromise;
 } // The end of our initSqlJs function
 
-// This bit below is copied almost exactly from what you get when you use the MODULARIZE=1 flag with emcc
-// However, we don't want to use the emcc modularization. See shell-pre.js
-if (typeof exports === 'object' && typeof module === 'object'){
-    module.exports = initSqlJs;
-    // This will allow the module to be used in ES6 or CommonJS
-    module.exports.default = initSqlJs;
-}
-else if (typeof define === 'function' && define['amd']) {
-    define([], function() { return initSqlJs; });
-}
-else if (typeof exports === 'object'){
-    exports["Module"] = initSqlJs;
-}
+globalThis.initSqlJs = initSqlJs;

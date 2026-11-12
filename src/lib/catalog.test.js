@@ -8,6 +8,8 @@ import {
   PLANNED_CHALLENGES,
   PROFESSIONAL_CATEGORIES,
 } from "../data/catalog.js";
+import { AREAS, AREA_BY_ID } from "../data/areas.js";
+import { PROJECTS } from "../data/projects.js";
 import {
   filterChallenges,
   hasActiveCatalogFilters,
@@ -25,7 +27,7 @@ const noFilters = {
 test("category search matches roles, skills and accents", () => {
   const results = searchCategories(PROFESSIONAL_CATEGORIES, "inteligencia artificial");
 
-  assert.deepEqual(results.map((category) => category.id), ["data-ai"]);
+  assert.deepEqual(results.map((category) => category.id), ["data"]);
 });
 
 test("challenge search finds available experience by skill or profession", () => {
@@ -39,7 +41,7 @@ test("challenge search finds available experience by skill or profession", () =>
 
 test("the introductory challenge is available to critical-thinking beginners", () => {
   const filters = {
-    area: "general",
+    area: "communication",
     difficulty: "Principiante",
     duration: "medium",
     competency: "Pensamiento crítico",
@@ -86,4 +88,17 @@ test("catalog filter options only include areas, levels and competencies with av
   for (const difficulty of DIFFICULTIES) {
     assert.ok(filterChallenges(AVAILABLE_CHALLENGES, { ...noFilters, difficulty }).length > 0);
   }
+});
+
+test("Explorer and projects share exactly the same three areas", () => {
+  const expectedIds = ["data", "software", "communication"];
+  assert.deepEqual(AREAS.map(({ id }) => id), expectedIds);
+  assert.deepEqual(AVAILABLE_CATEGORIES.map(({ id }) => id), expectedIds);
+  assert.deepEqual(Object.keys(AREA_BY_ID), expectedIds);
+  assert.deepEqual([...new Set(PROJECTS.map(({ area }) => area))], expectedIds);
+  assert.ok(AVAILABLE_CHALLENGES.every(({ categoryId }) => AREA_BY_ID[categoryId]));
+  assert.deepEqual(
+    AREAS.map(({ id, label }) => [id, label]),
+    [["data", "Datos"], ["software", "Software"], ["communication", "Comunicación"]],
+  );
 });

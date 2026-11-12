@@ -1,4 +1,7 @@
 import { AVAILABLE_CHALLENGES } from "../../data/catalog";
+import { AREA_BY_ID } from "../../data/areas";
+import { PROJECTS } from "../../data/projects";
+import { getCurrentActivityStreak } from "../../lib/activityStreak";
 import {
   WorkspaceFrame,
   WorkspaceMetric,
@@ -17,19 +20,21 @@ export default function IndividualWorkspacePage({
   workspace,
   section,
   progress,
+  projectProgress = {},
+  activityStreak,
   history,
   onOpenReport,
 }) {
   const completedCount = Object.values(progress).filter((item) => item.completed).length;
-  const inProgressCount = Object.values(progress).filter((item) => item.inProgress).length;
-  const progressCount = Object.values(progress).filter((item) => item.completed || item.inProgress).length;
+  const completedProjectCount = Object.values(projectProgress).filter((item) => item.completed).length;
+  const activeStreak = getCurrentActivityStreak(activityStreak);
   const latestHistory = history.filter((record, index) => (
     history.findIndex((entry) => entry.challengeId === record.challengeId) === index
   ));
   const availableReports = latestHistory.filter((record) => progress[record.challengeId]?.completed);
 
   let title = "Tu progreso";
-  let description = "Revisa las experiencias que has iniciado y las competencias que has practicado.";
+  let description = "Revisa tus desafíos y proyectos completados, y tu racha de actividad diaria.";
   if (section === "history") {
     title = "Historial de actividades";
     description = "Retoma el contexto de tus desafíos completados y consulta sus informes personales.";
@@ -51,26 +56,51 @@ export default function IndividualWorkspacePage({
       {section === "progress" && (
         <>
           <div className="workspace-metrics">
-            <WorkspaceMetric icon="circle-check" label="COMPLETADOS" value={completedCount} detail="Desafíos terminados" />
-            <WorkspaceMetric icon="play" label="EN CURSO" value={inProgressCount} detail="Experiencias iniciadas" />
-            <WorkspaceMetric icon="brain" label="DESAFÍOS CON PROGRESO" value={progressCount} detail="Con actividad registrada" />
+            <WorkspaceMetric icon="circle-check" label="DESAFÍOS REALIZADOS" value={completedCount} detail="Completados al 100%" />
+            <WorkspaceMetric icon="briefcase" label="PROYECTOS REALIZADOS" value={completedProjectCount} detail="Entregas aprobadas" />
+            <WorkspaceMetric icon="sparkles" label="RACHA ACTUAL" value={activeStreak}
+              detail={activeStreak === 1 ? "día activo consecutivo" : "días activos consecutivos"} />
           </div>
-          <WorkspacePanel title="Explora competencias" description="Practica con situaciones guiadas; no son calificaciones ni certificaciones.">
-            <div className="workspace-chip-list">
-              {["Pensamiento crítico", "Validación de información", "Resolución de problemas", "Comunicación"].map((item) => (
-                <span className="tag" key={item}>{item}</span>
-              ))}
-            </div>
-          </WorkspacePanel>
           <WorkspacePanel title="Tus desafíos" description="La exploración sigue siendo el punto de partida.">
             <div className="workspace-entity-list">
               {AVAILABLE_CHALLENGES.map((challenge) => {
                 const item = progress[challenge.id] || {};
                 return (
                   <article className="workspace-entity-row" key={challenge.id}>
-                    <div><strong>{challenge.title}</strong><span>{challenge.categoryId === "general" ? "Pensamiento crítico" : challenge.profession}</span></div>
+                    <div><strong>{challenge.title}</strong><span>{AREA_BY_ID[challenge.categoryId]?.label} · {challenge.profession}</span></div>
                     <WorkspaceStatus variant={item.completed ? "success" : item.inProgress ? "warning" : "neutral"}>
                       {item.completed ? "Completado" : item.inProgress ? "En curso" : "Disponible"}
+                    </WorkspaceStatus>
+                  </article>
+                );
+              })}
+            </div>
+          </WorkspacePanel>
+          <WorkspacePanel title="Tus proyectos" description="La entrega se marca completada solo cuando todos sus criterios están cumplidos en la versión enviada.">
+            <div className="workspace-entity-list">
+              {PROJECTS.map((project) => {
+                const item = projectProgress[project.id] || {};
+                const label = item.completed
+                  ? "Completado"
+                  : item.needsImprovement
+                    ? "Necesita mejoras"
+                    : item.inProgress
+                      ? item.submissionIsCurrent === false && item.evaluation
+                        ? "Cambios por entregar"
+                        : "En curso"
+                      : "Sin iniciar";
+                return (
+                  <article className="workspace-entity-row" key={project.id}>
+                    <div>
+                      <strong>{project.title}</strong>
+                      <span>
+                        {item.evaluation
+                          ? `${item.evaluation.criteria.filter((criterion) => criterion.passed).length} de ${item.evaluation.criteria.length} criterios en la última entrega`
+                          : "Completa las etapas y entrega para recibir retroalimentación"}
+                      </span>
+                    </div>
+                    <WorkspaceStatus variant={item.completed ? "success" : item.inProgress ? "warning" : "neutral"}>
+                      {label}
                     </WorkspaceStatus>
                   </article>
                 );

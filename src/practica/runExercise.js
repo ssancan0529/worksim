@@ -1,5 +1,5 @@
 export function runExercise(exercise, code, compare) {
-  const worker = new Worker(new URL("./engines.worker.js", import.meta.url));
+  const worker = new Worker(new URL("./engines.worker.js", import.meta.url), { type: "module" });
   let timer;
   let rejectRun;
 
@@ -27,9 +27,9 @@ export function runExercise(exercise, code, compare) {
       if (data.error) reject(new Error(data.error));
       else resolve(data);
     };
-    worker.onerror = () => {
+    worker.onerror = event => {
       stop();
-      reject(new Error("No se pudo iniciar el motor de pruebas. Vuelve a intentar."));
+      reject(new Error(event.message || "No se pudo iniciar el motor de pruebas. Vuelve a intentar."));
     };
     worker.postMessage({ id: exercise.id, code, compare });
   });

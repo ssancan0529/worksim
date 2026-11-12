@@ -46,7 +46,7 @@ export async function runMayraQuery() {
 
 export function runMayraSql(query) {
   return new Promise((resolve, reject) => {
-    const worker = new Worker(new URL("./mayraSql.worker.js", import.meta.url));
+    const worker = new Worker(new URL("./mayraSql.worker.js", import.meta.url), { type: "module" });
     const timeout = setTimeout(() => {
       worker.terminate();
       reject(new Error("La consulta superó el tiempo de ejecución. Simplifícala y vuelve a intentarlo."));
@@ -62,9 +62,9 @@ export function runMayraSql(query) {
       if (data.error) reject(new Error(data.error));
       else resolve(data.results);
     };
-    worker.onerror = () => {
+    worker.onerror = event => {
       finish();
-      reject(new Error("No se pudo iniciar SQLite. Vuelve a intentarlo."));
+      reject(new Error(event.message || "No se pudo iniciar SQLite. Vuelve a intentarlo."));
     };
     worker.postMessage(query);
   });

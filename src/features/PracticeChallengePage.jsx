@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import ActionButton from "../components/ActionButton";
 import ContentCard from "../components/ContentCard";
 import CriterionStatus from "../components/CriterionStatus";
+import ExerciseTable from "../components/ExerciseTable";
 import ExerciseEditor from "../components/ExerciseEditor";
 import ExerciseGuide from "../components/ExerciseGuide";
 import Field from "../components/Field";
@@ -9,9 +10,9 @@ import PageActions from "../components/PageActions";
 import PageIntro from "../components/PageIntro";
 import StatusNotice from "../components/StatusNotice";
 import {
-  confidenceIsValid, exercises, issues, PRACTICE_CHALLENGE, PRACTICE_CLOSING_STEP, scoreDetection,
+  confidenceIsValid, exercises, issues, PRACTICE_CHALLENGE, PRACTICE_CLOSING_STEP, PRACTICE_STEPS, scoreDetection,
 } from "../practica/cases.mjs";
-import { attemptResultLabel, canAdvanceExercise, canCompletePractice, getAttemptResult, readPreviousPractice } from "../practica/state.mjs";
+import { attemptResultLabel, canAdvanceExercise, canCompletePractice, getAttemptResult, getPracticeStep, readPreviousPractice } from "../practica/state.mjs";
 import { runExercise } from "../practica/runExercise";
 
 const ratings = ["Nada seguro/a", "Poco seguro/a", "Algo seguro/a", "Bastante seguro/a", "Muy seguro/a"];
@@ -62,7 +63,28 @@ function PreviousPractice() {
   );
 }
 
-function PracticeStart({ draft, onUpdate, onHome, onNext }) {
+function PracticeStepNavigation({ step, draft, onNavigate }) {
+  const maxUnlockedStep = getPracticeStep(draft);
+  return (
+    <nav className={`exercise-step-nav${step === 1 || step === PRACTICE_CLOSING_STEP ? " compact" : ""}`}
+      aria-label="Etapas del ejercicio">
+      {PRACTICE_STEPS.slice(1).map((item, index) => {
+        const stepIndex = index + 1;
+        const locked = stepIndex > maxUnlockedStep;
+        const current = step === stepIndex;
+        return (
+          <button key={item.path} type="button" disabled={locked}
+            aria-current={current ? "step" : undefined}
+            onClick={() => onNavigate(stepIndex)}>
+            <span>{stepIndex}.</span> {item.label}
+          </button>
+        );
+      })}
+    </nav>
+  );
+}
+
+function PracticeStart({ draft, onUpdate, onExit, onNext }) {
   return (
     <div className="practice-form">
       <PageIntro eyebrow="PRÁCTICA GUIADA · NIVEL JUNIOR" title={PRACTICE_CHALLENGE.title}
@@ -78,23 +100,9 @@ function PracticeStart({ draft, onUpdate, onHome, onNext }) {
       </ContentCard>
       <PreviousPractice />
       <PageActions>
-        <ActionButton variant="secondary" icon="arrow-left" iconPosition="left" onClick={onHome}>Volver a desafíos</ActionButton>
+        <ActionButton variant="secondary" icon="arrow-left" iconPosition="left" onClick={onExit}>Volver al explorador</ActionButton>
         <ActionButton icon="arrow-right" onClick={onNext} disabled={!confidenceIsValid(draft.before)}>Empezar</ActionButton>
       </PageActions>
-    </div>
-  );
-}
-
-function RowsTable({ columns, rows, caption }) {
-  return (
-    <div className="table-scroll exercise-table" tabIndex={0} role="region" aria-label={caption}>
-      <table>
-        <caption>{caption}</caption>
-        <thead><tr>{columns.map((column, index) => <th scope="col" key={index}>{column}</th>)}</tr></thead>
-        <tbody>{rows.map((row, i) => (
-          <tr key={i}>{row.map((cell, j) => <td key={j}>{cell === null ? "NULL" : String(cell)}</td>)}</tr>
-        ))}</tbody>
-      </table>
     </div>
   );
 }
@@ -106,7 +114,7 @@ function ExerciseResult({ result, emptyText }) {
     <>
       <p className="exercise-score"><strong>{result.passed} de {result.total}</strong> criterios cumplidos</p>
       {result.rows && (result.rows.length
-        ? <RowsTable columns={result.columns} rows={result.rows} caption="Filas devueltas" />
+        ? <ExerciseTable columns={result.columns} rows={result.rows} caption="Filas devueltas" />
         : <p className="muted">La consulta devolvió cero filas.</p>)}
       <ul className="exercise-criteria">
         {result.checks.map(check => (
@@ -166,7 +174,7 @@ function AuditResult({ lines }) {
   );
 }
 
-function PracticeExercise({ exercise, draft, onUpdate, onBack, onNext, nextLabel }) {
+function PracticeExercise({ exercise, draft, onUpdate, onBack, onNext, onExit, nextLabel }) {
   const attempt = draft.attempts[exercise.id];
   const readOnly = Boolean(draft.completedAt);
   const isSql = exercise.language === "SQL";
@@ -176,7 +184,7 @@ function PracticeExercise({ exercise, draft, onUpdate, onBack, onNext, nextLabel
   const ready = Boolean(attempt.code.trim()) && !readOnly && !busy;
   const readyToCompare = ready && (isSql ? Boolean(attempt.prediction) : attempt.lines.length > 0 || attempt.none);
   const result = getAttemptResult(attempt);
-  const canAdvance = readOnly || canAdvanceExercise(attempt);
+  const canAdvance = readOnly || canAdvanceExercise(attempt) && !busy && !error;
 
   useEffect(() => () => {
     const job = currentRun.current;
@@ -198,6 +206,7 @@ function PracticeExercise({ exercise, draft, onUpdate, onBack, onNext, nextLabel
     let task;
     setBusy(target);
     setError(null);
+    updateAttempt({ executedCode: null, preview: null, comparison: null });
     try {
       task = runExercise(exercise, attempt.code, compare);
       currentRun.current = task;
@@ -206,12 +215,26 @@ function PracticeExercise({ exercise, draft, onUpdate, onBack, onNext, nextLabel
       const run = { at: new Date().toISOString(), comparedWithAI: compare,
         passed: results.user.passed, total: results.user.total, error: results.user.error };
       updateAttempt({
+        executedCode: attempt.code,
         preview: results.user,
         runs: [...attempt.runs, run],
         ...(compare ? { comparison: results, predictionLocked: true } : {}),
       });
     } catch (failure) {
-      if (!task || currentRun.current === task) setError({ target, message: failure.message });
+      if (!task || currentRun.current === task) {
+        const message = failure instanceof Error ? failure.message : String(failure);
+        const failedPreview = { error: message, checks: [], passed: 0, total: 0 };
+        setError({ target, message });
+        updateAttempt({
+          executedCode: null,
+          preview: failedPreview,
+          comparison: null,
+          runs: [...attempt.runs, {
+            at: new Date().toISOString(), comparedWithAI: compare,
+            passed: 0, total: 0, error: message,
+          }],
+        });
+      }
     } finally {
       if (!task || currentRun.current === task) {
         currentRun.current = null;
@@ -225,43 +248,42 @@ function PracticeExercise({ exercise, draft, onUpdate, onBack, onNext, nextLabel
       <PageIntro eyebrow={`${exercise.company} · ${exercise.language} · NIVEL JUNIOR`}
         title={exercise.title} description={exercise.intro} />
       <ExerciseGuide items={exercise.guide} example={exercise.example} exampleIsCode />
-      <div className="exercise-workbench">
-        <ContentCard className="exercise-brief">
-          <h2>Tu encargo</h2>
-          <ul className="plain-list">{exercise.requirements.map(text => <li key={text}>{text}</li>)}</ul>
-          {isSql && <RowsTable columns={exercise.columns} rows={exercise.rows} caption={`Tabla ${exercise.table}`} />}
+      <ContentCard className="exercise-brief">
+        <h2>Tu encargo</h2>
+        <ul className="plain-list">{exercise.requirements.map(text => <li key={text}>{text}</li>)}</ul>
+        {isSql && <ExerciseTable columns={exercise.columns} rows={exercise.rows}
+          caption={`Tabla ${exercise.table}`} collapsible />}
+      </ContentCard>
+      <div className="exercise-code-results">
+        <ContentCard>
+          <ExerciseEditor id={`editor-${exercise.id}`} label={isSql ? "Tu consulta SQL" : "Tu función de Python"}
+            file={isSql ? "consulta.sql" : "retiros.py"} value={attempt.code} readOnly={readOnly || Boolean(busy)}
+            maxLength={6000}
+            placeholder={isSql ? `SELECT * FROM ${exercise.table};` : "def retirar(saldo, monto):"}
+            onRun={() => execute(false)} onChange={code => {
+              setError(null);
+              updateAttempt({ code, executedCode: null, preview: null, comparison: null }, true);
+            }} />
+          <p className="field-hint exercise-start-hint">
+            Escribe lo que sepas para continuar. Tu intento puede estar incompleto o tener errores.
+            {isSql && <> Puedes empezar con <code>SELECT</code>.</>}
+          </p>
+          <div className="exercise-editor-actions">
+            <ActionButton icon="play" iconPosition="left" disabled={!ready} onClick={() => execute(false)}>
+              {busy === "preview" ? "Ejecutando…" : isSql ? "Ejecutar consulta" : "Ejecutar Python"}
+            </ActionButton>
+            <details className="exercise-hint"><summary>Ver pista</summary><p>{exercise.hint}</p></details>
+          </div>
         </ContentCard>
-        <div>
-          <ContentCard>
-            <ExerciseEditor id={`editor-${exercise.id}`} label={isSql ? "Tu consulta SQL" : "Tu función de Python"}
-              file={isSql ? "consulta.sql" : "retiros.py"} value={attempt.code} readOnly={readOnly || Boolean(busy)}
-              maxLength={6000}
-              placeholder={isSql ? `SELECT * FROM ${exercise.table};` : "def retirar(saldo, monto):"}
-              onRun={() => execute(false)} onChange={code => {
-                setError(null);
-                updateAttempt({ code, preview: null, comparison: null }, true);
-              }} />
-            <p className="field-hint exercise-start-hint">
-              Escribe lo que sepas para continuar. Tu intento puede estar incompleto o tener errores.
-              {isSql && <> Puedes empezar con <code>SELECT</code>.</>}
-            </p>
-            <div className="exercise-editor-actions">
-              <ActionButton icon="play" iconPosition="left" disabled={!ready} onClick={() => execute(false)}>
-                {busy === "preview" ? "Ejecutando…" : isSql ? "Ejecutar consulta" : "Ejecutar Python"}
-              </ActionButton>
-              <details className="exercise-hint"><summary>Ver pista</summary><p>{exercise.hint}</p></details>
-            </div>
-          </ContentCard>
-          <ContentCard>
-            <h2>Resultado de tu código</h2>
-            <div aria-live="polite" aria-busy={Boolean(busy)}>
-              {canAdvance && !readOnly && !busy && <p className="field-hint">Intento registrado. Puedes continuar.</p>}
-              {busy === "preview" ? <p className="muted">Ejecutando casos de prueba…</p>
-                : error?.target === "preview" ? <StatusNotice variant="warning">{error.message}</StatusNotice>
-                  : <ExerciseResult result={result} emptyText="Puedes ejecutar tu código para comprobar los requisitos. La ejecución es opcional." />}
-            </div>
-          </ContentCard>
-        </div>
+        <ContentCard>
+          <h2>Resultado de tu código</h2>
+          <div aria-live="polite" aria-busy={Boolean(busy)}>
+            {canAdvance && !readOnly && !busy && <p className="field-hint">Intento registrado. Puedes continuar.</p>}
+            {busy === "preview" ? <p className="muted">Ejecutando casos de prueba…</p>
+              : error?.target === "preview" ? <StatusNotice variant="warning">{error.message}</StatusNotice>
+                : <ExerciseResult result={result} emptyText="Puedes ejecutar tu código para comprobar los requisitos. La ejecución es opcional." />}
+          </div>
+        </ContentCard>
       </div>
 
       <ContentCard className="exercise-comparison">
@@ -319,6 +341,7 @@ function PracticeExercise({ exercise, draft, onUpdate, onBack, onNext, nextLabel
       )}
       <PageActions>
         <ActionButton variant="secondary" icon="arrow-left" iconPosition="left" onClick={onBack}>Volver</ActionButton>
+        <ActionButton variant="secondary" onClick={onExit}>Salir al explorador</ActionButton>
         <ActionButton icon="arrow-right" disabled={!canAdvance || Boolean(busy)} onClick={onNext}>{nextLabel}</ActionButton>
       </PageActions>
       {!canAdvance && <p className="validation-hint">
@@ -328,7 +351,7 @@ function PracticeExercise({ exercise, draft, onUpdate, onBack, onNext, nextLabel
   );
 }
 
-function PracticeClose({ draft, onUpdate, onHome, onBack, onExport, onCopy }) {
+function PracticeClose({ draft, onUpdate, onExit, onComplete, onBack, onExport, onCopy }) {
   const complete = Boolean(draft.completedAt);
   const ready = canCompletePractice(draft);
   const audit = scoreDetection(draft.attempts.withdrawal.lines);
@@ -368,18 +391,28 @@ function PracticeClose({ draft, onUpdate, onHome, onBack, onExport, onCopy }) {
       </ContentCard>
       <PageActions>
         <ActionButton variant="secondary" icon="arrow-left" iconPosition="left" onClick={onBack}>Volver a Retiros</ActionButton>
-        <ActionButton icon="arrow-right" disabled={!ready} onClick={onHome}>Volver al portal</ActionButton>
+        <ActionButton variant="secondary" onClick={onExit}>Salir sin finalizar</ActionButton>
+        <ActionButton icon="check" disabled={!ready} onClick={onComplete}>
+          {complete ? "Volver al explorador" : "Finalizar práctica"}
+        </ActionButton>
       </PageActions>
-      {!ready && <p className="validation-hint">Responde la pregunta de seguridad para volver al portal.</p>}
+      {!ready && <p className="validation-hint">Responde la pregunta de seguridad si quieres finalizar. También puedes salir y continuar después.</p>}
     </div>
   );
 }
 
 export default function PracticeChallengePage(props) {
-  const { step, onNext, onBack } = props;
-  if (step === 1) return <PracticeStart {...props} />;
-  if (step === PRACTICE_CLOSING_STEP) return <PracticeClose {...props} />;
-  const exercise = exercises[step - 2];
-  return <PracticeExercise key={exercise.id} {...props} exercise={exercise} onBack={onBack} onNext={onNext}
-    nextLabel={step === PRACTICE_CLOSING_STEP - 1 ? "Ir al cierre" : "Siguiente ejercicio"} />;
+  const { step, draft, onBack, onNext, onExit, onNavigate } = props;
+  return (
+    <>
+      <PracticeStepNavigation step={step} draft={draft} onNavigate={onNavigate} />
+      {step === 1
+        ? <PracticeStart {...props} />
+        : step === PRACTICE_CLOSING_STEP
+          ? <PracticeClose {...props} />
+          : <PracticeExercise key={exercises[step - 2].id} {...props}
+              exercise={exercises[step - 2]} onBack={onBack} onNext={onNext} onExit={onExit}
+              nextLabel={step === PRACTICE_CLOSING_STEP - 1 ? "Ir al cierre" : "Siguiente ejercicio"} />}
+    </>
+  );
 }

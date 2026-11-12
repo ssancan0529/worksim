@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { AVAILABLE_CHALLENGES, PLANNED_CHALLENGES } from "../../data/catalog";
+import { AREAS } from "../../data/areas";
 import {
   WorkspaceFrame,
   WorkspaceMetric,
@@ -71,7 +72,9 @@ export default function CreatorWorkspacePage({ workspace, section, onAction }) {
               <input value={title} onChange={(event) => { setTitle(event.target.value); setSaved(false); }} placeholder="Ej. El brief que cambió de alcance" />
             </label>
             <div className="workspace-form-grid">
-              <label className="form-field"><span className="editor-label">Área</span><select defaultValue="general"><option value="general">General</option><option value="software">Desarrollo de software</option><option value="business">Negocios y administración</option></select></label>
+              <label className="form-field"><span className="editor-label">Área</span><select defaultValue={AREAS[0].id}>
+                {AREAS.map(({ id, label }) => <option key={id} value={id}>{label}</option>)}
+              </select></label>
               <label className="form-field"><span className="editor-label">Dificultad</span><select defaultValue="beginner"><option value="beginner">Principiante</option><option value="intermediate">Intermedio</option><option value="advanced">Avanzado</option></select></label>
             </div>
             <label className="form-field"><span className="editor-label">Contexto y objetivo</span><textarea placeholder="Describe el rol, la situación y la decisión que deberá tomar la persona." /></label>
