@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { normalizeDraft } from "./storage.js";
 import { PRACTICE_CLOSING_STEP } from "../practica/cases.mjs";
-import { canCompletePractice, getPracticeStep, practiceTotals } from "../practica/state.mjs";
+import { attemptResultLabel, canCompletePractice, getPracticeStep, practiceTotals } from "../practica/state.mjs";
 
 test("legacy challenge drafts keep their technical default and workspace", () => {
   const draft = normalizeDraft({ testing: { code: "print('legacy')" } });
@@ -53,9 +53,31 @@ test("junior practice restores saved code and requires a posterior confidence an
   assert.equal(draft.attempts.transfers.code, "SELECT * FROM transacciones;");
   assert.equal(getPracticeStep(draft), 4);
   assert.equal(canCompletePractice(draft), false);
-  draft.attempts.withdrawal.comparison = comparison;
+  draft.attempts.withdrawal.code = "def retirar(saldo, monto):";
   assert.equal(getPracticeStep(draft), PRACTICE_CLOSING_STEP);
+  draft.attempts.withdrawal.comparison = comparison;
   assert.deepEqual(practiceTotals(draft), { passed: 5, total: 12 });
   assert.equal(canCompletePractice(draft), false);
   assert.equal(canCompletePractice({ ...draft, after: 4 }), true);
+});
+
+test("minimal unexecuted and failed attempts survive reload and allow practice completion", () => {
+  const draft = normalizeDraft({
+    kind: "practice", started: true, before: 2,
+    attempts: {
+      transfers: { code: "SELECT" },
+      support: { code: "SELECT FROM solicitudes", preview: { error: "Error de sintaxis", passed: 0, total: 4 } },
+      withdrawal: { code: "def retirar(saldo, monto):" },
+    },
+  });
+  assert.equal(getPracticeStep(draft), PRACTICE_CLOSING_STEP);
+  assert.equal(canCompletePractice(draft), false);
+  assert.equal(canCompletePractice({ ...draft, after: 3 }), true);
+  assert.equal(attemptResultLabel(draft.attempts.transfers), "Intento registrado · sin ejecutar");
+  assert.equal(attemptResultLabel(draft.attempts.support), "Intento registrado · con errores de ejecución");
+  assert.equal(attemptResultLabel(draft.attempts.withdrawal), "Intento registrado · sin ejecutar");
+  assert.deepEqual(practiceTotals(draft), { passed: 0, total: 4 });
+  draft.attempts.transfers.code = " \n ";
+  assert.equal(getPracticeStep(draft), 2);
+  assert.equal(canCompletePractice({ ...draft, after: 3 }), false);
 });

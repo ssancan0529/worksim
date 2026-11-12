@@ -63,16 +63,18 @@ test("junior queries check filtering, selection and sorting with real SQLite out
   assert.match(evaluateSql(sqlite, support.id, "SELECT FROM solicitudes").error, /error de sintaxis/i);
 });
 
-test("SQL advancement accepts runnable queries regardless of their score", () => {
+test("SQL advancement accepts minimal queries regardless of syntax errors or score", () => {
   for (const exercise of exercises.filter(item => item.language === "SQL")) {
     const partial = evaluateSql(sqlite, exercise.id, `SELECT * FROM ${exercise.table};`);
     const noCriteria = evaluateSql(sqlite, exercise.id, "SELECT 1;");
     const invalid = evaluateSql(sqlite, exercise.id, `SELECT FROM ${exercise.table};`);
     assert.ok(partial.passed < partial.total);
     assert.equal(noCriteria.passed, 0);
-    assert.equal(canAdvanceExercise(exercise, { preview: partial }), true);
-    assert.equal(canAdvanceExercise(exercise, { preview: noCriteria }), true);
-    assert.equal(canAdvanceExercise(exercise, { preview: invalid }), false);
-    assert.equal(canAdvanceExercise(exercise, {}), false);
+    assert.equal(canAdvanceExercise({ code: `SELECT * FROM ${exercise.table};`, preview: partial }), true);
+    assert.equal(canAdvanceExercise({ code: "SELECT 1;", preview: noCriteria }), true);
+    assert.equal(canAdvanceExercise({ code: `SELECT FROM ${exercise.table};`, preview: invalid }), true);
+    assert.equal(canAdvanceExercise({ code: "SELECT" }), true);
+    assert.equal(canAdvanceExercise({ code: "   \n\t", preview: partial }), false);
+    assert.equal(canAdvanceExercise({}), false);
   }
 });

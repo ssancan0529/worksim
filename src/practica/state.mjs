@@ -53,17 +53,22 @@ export function getAttemptResult(attempt) {
   return attempt.preview ?? attempt.comparison?.user ?? null;
 }
 
-export function canAdvanceExercise(exercise, attempt) {
-  if (exercise.language !== "SQL") return Boolean(attempt.comparison);
+export function canAdvanceExercise(attempt) {
+  return Boolean(string(attempt.code).trim());
+}
+
+export function attemptResultLabel(attempt) {
   const result = getAttemptResult(attempt);
-  return Boolean(result && !result.error);
+  if (!result) return "Intento registrado · sin ejecutar";
+  if (result.error) return "Intento registrado · con errores de ejecución";
+  return `${result.passed} de ${result.total} criterios cumplidos`;
 }
 
 export function getPracticeStep(draft) {
   if (!draft.started) return 0;
   if (draft.completedAt) return PRACTICE_CLOSING_STEP;
   if (!confidenceIsValid(draft.before)) return 1;
-  const pending = exercises.findIndex(exercise => !canAdvanceExercise(exercise, draft.attempts[exercise.id]));
+  const pending = exercises.findIndex(exercise => !canAdvanceExercise(draft.attempts[exercise.id]));
   return pending === -1 ? PRACTICE_CLOSING_STEP : pending + 2;
 }
 

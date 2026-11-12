@@ -61,7 +61,7 @@ export default function MayraChallengePage({ step, draft, onUpdate, onBack, onFi
   const [error, setError] = useState("");
   const [busy, setBusy] = useState("");
   const running = useRef(false);
-  const ready = testing.ran;
+  const ready = Boolean(testing.code.trim()) && draft.investigation.reviewed;
   useEffect(() => () => { running.current = false; }, []);
 
   const update = (key, value) => onUpdate(current => ({
@@ -77,6 +77,7 @@ export default function MayraChallengePage({ step, draft, onUpdate, onBack, onFi
       const [ownResult] = await runMayraSql(testing.code);
       if (!running.current) return;
       setResult(ownResult ?? null);
+      onUpdate(current => ({ ...current, testing: { ...current.testing, results: checkRows(ownResult) } }));
       if (compare) {
         const [aiResult] = await runMayraSql(AI_QUERY);
         if (!running.current) return;
@@ -101,13 +102,15 @@ export default function MayraChallengePage({ step, draft, onUpdate, onBack, onFi
       <PageIntro title="Informe de transferencias" description="Compara la propuesta con los requisitos del Banco Horizonte." />
       <ContentCard>
         <h2>Resultado de la IA</h2>
-        <SqlResult result={{ columns, values: testing.rows }} />
+        {testing.ran ? <SqlResult result={{ columns, values: testing.rows }} />
+          : <p>Comparación opcional pendiente de ejecutar.</p>}
         <h3>Filas esperadas</h3>
         <Rows rows={EXPECTED_ROWS} caption="Transferencias que cumplen el encargo" />
         <p>La propuesta incluye la fila 102, cuyo estado es Pendiente. Verifica el estado de las transferencias antes de entregar el reporte.</p>
       </ContentCard>
       <ContentCard>
         <h2>Tu evidencia</h2>
+        {!testing.results.length && <p>Consulta registrada. La evaluación del código está pendiente.</p>}
         {testing.results.map(check => <p key={check.id}>{check.name} · <CriterionStatus passed={check.passed} /></p>)}
         <p>{options.find(([value]) => value === testing.verdict)?.[1]} · {testing.rationale}</p>
       </ContentCard>
@@ -137,6 +140,7 @@ export default function MayraChallengePage({ step, draft, onUpdate, onBack, onFi
                 setError("");
                 onUpdate(current => ({ ...current, testing: { ...current.testing, code, ran: false, results: [], rows: [] } }));
               }} />
+            <p className="field-hint">Escribe lo que sepas para continuar. Tu consulta puede estar incompleta o tener errores.</p>
             <div className="exercise-editor-actions">
               <ActionButton icon="play" iconPosition="left" disabled={Boolean(busy) || !testing.code.trim()} onClick={() => execute()}>
                 {busy === "own" ? "Ejecutando…" : "Ejecutar consulta"}
@@ -155,10 +159,10 @@ export default function MayraChallengePage({ step, draft, onUpdate, onBack, onFi
         {draft.investigation.reviewed ? <>
           <pre className="code-block"><code>{AI_QUERY}</code></pre>
           <ActionButton variant="secondary" icon="play" disabled={Boolean(busy) || !testing.code.trim()} onClick={() => execute(true)}>Ejecutar ambas consultas</ActionButton>
-          {ready && <><h3>Resultado de la IA</h3><SqlResult result={{ columns, values: testing.rows }} /></>}
+          {testing.ran && <><h3>Resultado de la IA</h3><SqlResult result={{ columns, values: testing.rows }} /></>}
         </> : <>
-          <p>Escribe y ejecuta tu consulta para ver la propuesta.</p>
-          <ActionButton variant="secondary" disabled={result === undefined || Boolean(busy)}
+          <p>Escribe un intento para ver la propuesta. Puedes ejecutar las consultas cuando quieras comprobarlas.</p>
+          <ActionButton variant="secondary" disabled={!testing.code.trim() || Boolean(busy)}
             onClick={() => onUpdate(current => ({ ...current, investigation: { ...current.investigation, reviewed: true } }))}>Ver propuesta de la IA</ActionButton>
         </>}
       </ContentCard>

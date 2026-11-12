@@ -22,7 +22,7 @@ import { simulateTests, verdictLabel } from "./lib/simulation";
 import { loadWorksimState, saveWorksimState } from "./lib/storage";
 import { getWorkspace } from "./data/workspaces";
 import { exercises, PRACTICE_CHALLENGE, PRACTICE_CLOSING_STEP, PRACTICE_STEPS, scoreDetection } from "./practica/cases.mjs";
-import { canCompletePractice, createPracticeDraft, getAttemptResult, getPracticeStep, practiceTotals } from "./practica/state.mjs";
+import { attemptResultLabel, canCompletePractice, createPracticeDraft, getPracticeStep, practiceTotals } from "./practica/state.mjs";
 
 const THEME_STORAGE_KEY = "worksim-theme";
 const workspace = getWorkspace("individual");
@@ -410,12 +410,11 @@ export default function App() {
         `Seguridad antes y después: ${draft.before} → ${draft.after} de 5`,
         ...exercises.map(exercise => {
           const attempt = draft.attempts[exercise.id];
-          const user = getAttemptResult(attempt);
           const ai = attempt.comparison?.ai;
           const comparison = ai ? ` · IA ${ai.passed}/${ai.total}` : "";
-          return `${exercise.title} · Mi código ${user.passed}/${user.total}${comparison}`;
+          return `${exercise.title} · ${attemptResultLabel(attempt)}${comparison}`;
         }),
-        `Hallazgos de Python: ${audit.hits} de ${audit.total}`,
+        `Hallazgos de Python: ${draft.attempts.withdrawal.comparison ? `${audit.hits} de ${audit.total}` : "Revisión opcional pendiente"}`,
         `Cómo me sentí: ${draft.feel || "—"}`,
         `Comentario: ${draft.note || "—"}`,
       ]

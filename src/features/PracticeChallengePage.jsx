@@ -11,7 +11,7 @@ import StatusNotice from "../components/StatusNotice";
 import {
   confidenceIsValid, exercises, issues, PRACTICE_CHALLENGE, PRACTICE_CLOSING_STEP, scoreDetection,
 } from "../practica/cases.mjs";
-import { canAdvanceExercise, canCompletePractice, getAttemptResult, readPreviousPractice } from "../practica/state.mjs";
+import { attemptResultLabel, canAdvanceExercise, canCompletePractice, getAttemptResult, readPreviousPractice } from "../practica/state.mjs";
 import { runExercise } from "../practica/runExercise";
 
 const ratings = ["Nada seguro/a", "Poco seguro/a", "Algo seguro/a", "Bastante seguro/a", "Muy seguro/a"];
@@ -176,7 +176,7 @@ function PracticeExercise({ exercise, draft, onUpdate, onBack, onNext, nextLabel
   const ready = Boolean(attempt.code.trim()) && !readOnly && !busy;
   const readyToCompare = ready && (isSql ? Boolean(attempt.prediction) : attempt.lines.length > 0 || attempt.none);
   const result = getAttemptResult(attempt);
-  const canAdvance = readOnly || canAdvanceExercise(exercise, attempt);
+  const canAdvance = readOnly || canAdvanceExercise(attempt);
 
   useEffect(() => () => {
     const job = currentRun.current;
@@ -241,9 +241,10 @@ function PracticeExercise({ exercise, draft, onUpdate, onBack, onNext, nextLabel
                 setError(null);
                 updateAttempt({ code, preview: null, comparison: null }, true);
               }} />
-            {isSql && !canAdvance && <p className="field-hint exercise-start-hint">
-              Para avanzar, ejecuta una consulta de lectura. Puedes empezar con <code>SELECT * FROM {exercise.table};</code>
-            </p>}
+            <p className="field-hint exercise-start-hint">
+              Escribe lo que sepas para continuar. Tu intento puede estar incompleto o tener errores.
+              {isSql && <> Puedes empezar con <code>SELECT</code>.</>}
+            </p>
             <div className="exercise-editor-actions">
               <ActionButton icon="play" iconPosition="left" disabled={!ready} onClick={() => execute(false)}>
                 {busy === "preview" ? "Ejecutando…" : isSql ? "Ejecutar consulta" : "Ejecutar Python"}
@@ -254,17 +255,17 @@ function PracticeExercise({ exercise, draft, onUpdate, onBack, onNext, nextLabel
           <ContentCard>
             <h2>Resultado de tu código</h2>
             <div aria-live="polite" aria-busy={Boolean(busy)}>
-              {isSql && canAdvance && !readOnly && !busy && <p className="field-hint">Intento registrado. Puedes continuar.</p>}
+              {canAdvance && !readOnly && !busy && <p className="field-hint">Intento registrado. Puedes continuar.</p>}
               {busy === "preview" ? <p className="muted">Ejecutando casos de prueba…</p>
                 : error?.target === "preview" ? <StatusNotice variant="warning">{error.message}</StatusNotice>
-                  : <ExerciseResult result={result} emptyText="Ejecuta tu código para comprobar los requisitos." />}
+                  : <ExerciseResult result={result} emptyText="Puedes ejecutar tu código para comprobar los requisitos. La ejecución es opcional." />}
             </div>
           </ContentCard>
         </div>
       </div>
 
       <ContentCard className="exercise-comparison">
-        <h2>{isSql ? "Compara con la IA (opcional)" : "Compara con la IA"}</h2>
+        <h2>Compara con la IA (opcional)</h2>
         {attempt.initialCode === null ? (
           <>
             <p>Escribe tu primera solución para ver la propuesta.</p>
@@ -321,7 +322,7 @@ function PracticeExercise({ exercise, draft, onUpdate, onBack, onNext, nextLabel
         <ActionButton icon="arrow-right" disabled={!canAdvance || Boolean(busy)} onClick={onNext}>{nextLabel}</ActionButton>
       </PageActions>
       {!canAdvance && <p className="validation-hint">
-        {isSql ? "Ejecuta una consulta de lectura para avanzar." : "Ejecuta la comparación para avanzar."}
+        Escribe un intento en el editor para avanzar. Basta con empezar tu respuesta.
       </p>}
     </>
   );
@@ -342,10 +343,10 @@ function PracticeClose({ draft, onUpdate, onHome, onBack, onExport, onCopy }) {
         <h2>Resumen de tu intento</h2>
         <ul className="exercise-criteria exercise-summary">
           {exercises.map(exercise => {
-            const result = getAttemptResult(draft.attempts[exercise.id]);
-            return <li key={exercise.id}><div><strong>{exercise.label}</strong><span>{result.passed} de {result.total} criterios cumplidos</span></div></li>;
+            return <li key={exercise.id}><div><strong>{exercise.label}</strong><span>{attemptResultLabel(draft.attempts[exercise.id])}</span></div></li>;
           })}
-          <li><div><strong>Hallazgos en Python</strong><span>{audit.hits} de {audit.total}</span></div></li>
+          <li><div><strong>Hallazgos en Python</strong><span>{draft.attempts.withdrawal.comparison
+            ? `${audit.hits} de ${audit.total}` : "Revisión opcional pendiente"}</span></div></li>
           <li><div><strong>Seguridad antes y después</strong><span>{draft.before} → {draft.after ?? "—"} de 5</span></div></li>
         </ul>
         <label className="general-select-field">
