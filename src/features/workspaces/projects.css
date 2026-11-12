@@ -8,10 +8,10 @@
 }
 
 :root[data-theme="dark"] .projects-page {
-  --project-hero-tint: #233c30;
-  --project-data-tint: #263b30;
-  --project-software-tint: #283643;
-  --project-communication-tint: #3c3529;
+  --project-hero-tint: #203b38;
+  --project-data-tint: #203b38;
+  --project-software-tint: #26374a;
+  --project-communication-tint: #35352f;
 }
 
 .projects-hero {
@@ -432,3 +432,7 @@
   .project-panel { padding: 16px; }
   .project-filters button { padding-inline: 10px; }
 }
+
+:root[data-theme="dark"] .project-api-board { border-color: var(--line); background: var(--field); color: var(--text); }
+:root[data-theme="dark"] .project-api-board li strong,
+:root[data-theme="dark"] .project-api-board .project-preview-title .icon { color: var(--primary); }
