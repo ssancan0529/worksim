@@ -20,7 +20,7 @@ import ProjectsPage from "./features/workspaces/ProjectsPage";
 import ReportPage from "./features/ReportPage";
 import TestingPage from "./features/TestingPage";
 import { evaluateGeneralReview } from "./lib/generalChallenge";
-import { simulateTests, verdictLabel } from "./lib/simulation";
+import { verdictLabel } from "./lib/simulation";
 import { loadWorksimState, saveWorksimState } from "./lib/storage";
 import { recordActivity } from "./lib/activityStreak";
 import { getWorkspace } from "./data/workspaces";
@@ -287,6 +287,7 @@ export default function App() {
             ...current.testing,
             [key === "parameters" ? "parameters" : "code"]: key === "invalidateRun" ? current.testing.code : value,
             executedCode: null,
+            petsReviewVersion: undefined,
             ran: false,
             results: [],
             verdict: "",
@@ -331,16 +332,17 @@ export default function App() {
     }));
   };
 
-  const runTests = () => {
+  const savePetsReview = (code, results) => {
     setDraft((current) => {
-      const results = simulateTests(current.testing.code);
+      if (current.testing.code !== code) return current;
       return {
         ...current,
         testing: {
           ...current.testing,
           ran: true,
-          executedCode: current.testing.code,
+          executedCode: code,
           results,
+          petsReviewVersion: 1,
           runs: [
             ...current.testing.runs,
             {
@@ -445,7 +447,7 @@ export default function App() {
       : [
         `WORKSIM · ${activeChallenge.ticket}`,
         `Dictamen: ${verdictLabel(draft.testing.verdict)}`,
-        `Pruebas con señal compatible: ${draft.testing.results.filter((item) => item.passed).length}/${draft.testing.results.length}`,
+        `Comprobaciones cumplidas: ${draft.testing.results.filter((item) => item.passed).length}/${draft.testing.results.length}`,
         `Justificación: ${draft.testing.rationale || "Sin justificación"}`,
         `Punto ciego: ${draft.reflection.blindSpot || "Sin respuesta"}`,
         `Evidencia: ${draft.reflection.evidence || "Sin respuesta"}`,
@@ -473,7 +475,7 @@ export default function App() {
         ? "La consulta se ejecutó en SQLite con datos ficticios."
         : isGeneral
         ? "Prototipo educativo; la retroalimentación se calcula a partir de una simulación guiada."
-        : "Prototipo educativo; las comprobaciones del sandbox son simuladas.",
+        : "Adopta+ usa datos ficticios. La versión de evaluación se indica en el intento.",
     };
     const url = URL.createObjectURL(
       new Blob([JSON.stringify(evidence, null, 2)], { type: "application/json" }),
@@ -605,7 +607,7 @@ export default function App() {
               onObservationChange={updateGeneralObservation} onOmissionChange={updateGeneralOmission}
               onVerify={saveGeneralVerification} onDecisionChange={updateTesting}
               onBack={() => moveTo(0)} onFinish={finishChallenge} />
-          : <TestingPage testing={draft.testing} onChange={updateTesting} onRun={runTests}
+          : <TestingPage testing={draft.testing} onChange={updateTesting} onRun={savePetsReview}
               onBack={() => moveTo(0)} onContinue={finishChallenge} />;
       case 2: {
         const Report = isGeneral ? GeneralReportPage : ReportPage;

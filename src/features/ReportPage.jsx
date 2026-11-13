@@ -17,6 +17,7 @@ export default function ReportPage({
   onExport,
 }) {
   const feedback = getReportFeedback(draft);
+  const realReview = draft.testing.petsReviewVersion === 1;
 
   return (
     <>
@@ -32,7 +33,7 @@ export default function ReportPage({
       </PageIntro>
 
       <section className="report-summary">
-        <div><span className="eyebrow">EVIDENCIA</span><strong>{draft.testing.ran ? `${feedback.passed.length} de ${draft.testing.results.length} comprobaciones` : "Sin suite ejecutada"}</strong><span>{feedback.selectedHypotheses.length} hipótesis investigadas</span></div>
+        <div><span className="eyebrow">EVIDENCIA</span><strong>{draft.testing.ran ? `${feedback.passed.length} de ${draft.testing.results.length} comprobaciones` : "Sin revisión registrada"}</strong><span>{feedback.selectedHypotheses.length} hipótesis investigadas</span></div>
         <div><span className="eyebrow">DICTAMEN</span><strong>{verdictLabel(draft.testing.verdict)}</strong><span>{draft.testing.rationale ? "Justificación registrada" : "Sin justificación"}</span></div>
         <div><span className="eyebrow">APRENDIZAJE</span><strong>Práctica sin nota</strong><span>{history.length} práctica{history.length === 1 ? "" : "s"} guardada{history.length === 1 ? "" : "s"}</span></div>
       </section>
@@ -43,11 +44,11 @@ export default function ReportPage({
           <div className="feedback-grid">
             <article>
               <span className="feedback-icon"><Icon name="search" /></span>
-              <div><h3>Señales confirmadas</h3><p>{feedback.passed.length ? feedback.passed.map((item) => item.name).join("; ") : "La revisión heurística no confirmó los requisitos comprobados."}</p></div>
+              <div><h3>Criterios cumplidos</h3><p>{feedback.passed.length ? feedback.passed.map((item) => item.name).join("; ") : "El intento aún no cumple los requisitos comprobados."}</p></div>
             </article>
             <article>
               <span className="feedback-icon"><Icon name="circle-alert" /></span>
-              <div><h3>Aspectos por revisar</h3><p>{feedback.failed.length ? feedback.failed.map((item) => item.name).join("; ") : "No se encontraron señales de los fallos previstos en esta revisión heurística."}</p></div>
+              <div><h3>Aspectos por revisar</h3><p>{feedback.failed.length ? feedback.failed.map((item) => item.name).join("; ") : "El intento cumple todos los criterios evaluados."}</p></div>
             </article>
             <article>
               <span className="feedback-icon"><Icon name="balance" /></span>
@@ -59,12 +60,21 @@ export default function ReportPage({
         )}
       </ContentCard>
 
+      {realReview && <ContentCard>
+        <h2>Evidencia de las pruebas de Python</h2>
+        <ul className="exercise-criteria">{draft.testing.results.map(check => (
+          <li key={check.id}><strong>{check.name}</strong><p>{check.detail}</p></li>
+        ))}</ul>
+      </ContentCard>}
+
       <ContentCard className="recommendations-card">
         <h2>Siguientes pasos sugeridos</h2>
         <ul className="recommendation-list">
           {feedback.recommendations.map((item) => <li key={item}><Icon name="lightbulb" size={17} />{item}</li>)}
         </ul>
-        <p className="small-note">La simulación examina patrones de texto y no valida sintaxis ni comportamiento de una aplicación real.</p>
+        <p className="small-note">{realReview
+          ? "Los casos ejecutan la función con mascotas ficticias en SQLite."
+          : "Este informe anterior conserva la revisión por patrones de texto."}</p>
       </ContentCard>
 
       <details className="content-card practice-details reflection-card">
@@ -107,7 +117,7 @@ export default function ReportPage({
           <p><strong>Notas de investigación:</strong> {draft.investigation.notes || "Sin notas."}</p>
           <p><strong>Dictamen y justificación:</strong> {verdictLabel(draft.testing.verdict)} · {draft.testing.rationale || "Sin justificación."}</p>
           {draft.testing.runs.length > 0 && (
-            <ul>{draft.testing.runs.map((run, index) => <li key={`${run.at}-${index}`}>{new Date(run.at).toLocaleString("es")} · {run.passed}/{run.total} comprobaciones con señal compatible</li>)}</ul>
+            <ul>{draft.testing.runs.map((run, index) => <li key={`${run.at}-${index}`}>{new Date(run.at).toLocaleString("es")} · {run.passed}/{run.total} criterios cumplidos</li>)}</ul>
           )}
         </div>
       </details>

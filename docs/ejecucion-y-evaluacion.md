@@ -44,11 +44,11 @@ Adopta+ carga los paquetes `sqlalchemy` y `sqlite3` antes de emitir la señal de
 
 ## Ejecución real frente a evaluación
 
-### Adopta+: ejecución y heurística conviven
+### Adopta+: comprobación del código ejecutado
 
-`PythonExecution` ejecuta Python; si termina sin error llama a `onSuccess`. En `TestingPage` ese callback llega a `runTests` en `src/App.jsx`, que llama a `simulateTests` de `src/lib/simulation.js`.
+El worker ejecuta `list_pets` con los parámetros del editor para mostrar la salida y usa `src/lib/petsCheck.py` para comprobar ocho casos con una base SQLite nueva por llamada. Los resultados muestran evidencia de los filtros, el orden por urgencia, el desempate por ID, la paginación y los casos sin filas o con límite cero.
 
-`simulateTests` **no ejecuta código**: inspecciona su texto con expresiones regulares y posiciones de fragmentos para buscar filtros, orden y validación de paginación. Estos resultados alimentan el informe. Puede reconocer patrones sin que la lógica sea correcta o no reconocer implementaciones equivalentes. La tabla de salida Python es evidencia de ejecución real, pero los indicadores heurísticos no prueban que esa salida satisfaga todos los requisitos. No se deben presentar como una suite ejecutable completa del endpoint.
+Un intento evaluado habilita el dictamen aunque queden criterios pendientes. Los errores al cargar o definir la función requieren una nueva ejecución. Si un caso falla al llamar a la función, el error aparece como evidencia. Al editar el código o los parámetros se invalida la revisión. Los informes anteriores conservan su evaluación original por patrones de texto.
 
 ### «El informe que no coincide»: escenario sin ejecución de código
 

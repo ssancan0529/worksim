@@ -18,15 +18,31 @@ const options = [["accept", "Aceptar"], ["modify", "Modificar"], ["reject", "Rec
 function checkRows(result) {
   const rows = result?.values ?? [];
   const returnedColumns = result?.columns.map(column => column.toLowerCase()) ?? [];
-  const idIndex = returnedColumns.indexOf("id");
-  const ids = rows.map(row => row[idIndex]);
+  const ids = rows.map(row => row[returnedColumns.indexOf("id")]);
   const expectedIds = EXPECTED_ROWS.map(([id]) => id);
-  const sameRows = ids.length === expectedIds.length && expectedIds.every(id => ids.includes(id));
+  const expectedById = new Map(EXPECTED_ROWS.map(row => [row[0], row]));
+  const missing = expectedIds.filter(id => !ids.includes(id));
+  const extra = ids.filter(id => !expectedById.has(id));
+  const matchingValues = rows.every((row, index) => {
+    const expected = expectedById.get(ids[index]);
+    return expected && columns.every((column, columnIndex) => row[returnedColumns.indexOf(column)] === expected[columnIndex]);
+  });
   return [
-    { id: "sql-columns", name: "Devuelve las columnas solicitadas", passed: columns.every(column => returnedColumns.includes(column)) },
-    { id: "sql-selection", name: "Selecciona todas y solo las transferencias del encargo", passed: sameRows },
+    { id: "sql-columns", name: "Devuelve las columnas solicitadas",
+      passed: returnedColumns.length === columns.length && columns.every((column, index) => returnedColumns[index] === column),
+      detail: `Columnas esperadas: ${columns.join(", ")}. Columnas devueltas: ${returnedColumns.join(", ") || "ninguna"}.` },
+    { id: "sql-selection", name: "Selecciona todas y solo las transferencias del encargo",
+      passed: ids.length === expectedIds.length && !missing.length && matchingValues,
+      detail: [
+        `Se esperaban ${expectedIds.length} filas. La consulta devolvió ${rows.length}.`,
+        missing.length && `IDs faltantes: ${missing.join(", ")}.`,
+        extra.length && `IDs fuera del encargo: ${extra.map(id => id ?? "sin ID").join(", ")}.`,
+        new Set(ids).size !== ids.length && "Hay IDs repetidos.",
+        !matchingValues && !extra.length && "Revisa los valores de las columnas solicitadas.",
+      ].filter(Boolean).join(" ") },
     { id: "sql-order", name: "Ordena las filas por ID ascendente", passed: ids.length > 0
-      && ids.every((id, index) => Number.isInteger(id) && (index === 0 || ids[index - 1] < id)) },
+      && ids.every((id, index) => Number.isInteger(id) && (index === 0 || ids[index - 1] < id)),
+      detail: `IDs devueltos en orden: ${ids.map(id => id ?? "sin ID").join(", ") || "ninguno"}.` },
   ];
 }
 
@@ -38,7 +54,10 @@ function SqlResult({ result, error }) {
       {result?.values.length ? <ExerciseTable columns={result.columns} rows={result.values} caption="Filas devueltas" />
         : <p className="muted">La consulta devolvió cero filas.</p>}
       <ul className="exercise-criteria">
-        {checkRows(result).map(check => <li key={check.id}><div><strong>{check.name}</strong><CriterionStatus passed={check.passed} /></div></li>)}
+        {checkRows(result).map(check => <li key={check.id}>
+          <div><strong>{check.name}</strong><CriterionStatus passed={check.passed} /></div>
+          <details><summary>Ver evidencia</summary><p>{check.detail}</p></details>
+        </li>)}
       </ul>
     </>
   );
@@ -48,6 +67,7 @@ export default function MayraChallengePage({ step, draft, onUpdate, onBack, onFi
   const { testing } = draft;
   const [result, setResult] = useState(undefined);
   const [error, setError] = useState("");
+  const [comparisonError, setComparisonError] = useState("");
   const [busy, setBusy] = useState("");
   const running = useRef(false);
   const ready = Boolean(testing.code.trim()) && draft.investigation.reviewed;
@@ -62,23 +82,30 @@ export default function MayraChallengePage({ step, draft, onUpdate, onBack, onFi
     running.current = true;
     setBusy(compare ? "comparison" : "own");
     setError("");
+    setComparisonError("");
+    setResult(undefined);
+    onUpdate(current => ({
+      ...current, testing: { ...current.testing, results: [], ...(compare ? { ran: false, rows: [] } : {}) },
+    }));
     try {
-      const [ownResult] = await runMayraSql(testing.code);
-      if (!running.current) return;
-      setResult(ownResult ?? null);
-      onUpdate(current => ({ ...current, testing: { ...current.testing, results: checkRows(ownResult) } }));
-      if (compare) {
-        const [aiResult] = await runMayraSql(AI_QUERY);
+      try {
+        const [ownResult] = await runMayraSql(testing.code);
         if (!running.current) return;
-        onUpdate(current => ({
-          ...current,
-          testing: { ...current.testing, ran: true, rows: aiResult?.values ?? [], results: checkRows(ownResult) },
-        }));
+        setResult(ownResult ?? null);
+        onUpdate(current => ({ ...current, testing: { ...current.testing, results: checkRows(ownResult) } }));
+      } catch (failure) {
+        if (running.current) setError(failure.message);
       }
-    } catch (failure) {
-      if (running.current) {
-        setResult(undefined);
-        setError(failure.message);
+      if (compare && running.current) {
+        try {
+          const [aiResult] = await runMayraSql(AI_QUERY);
+          if (!running.current) return;
+          onUpdate(current => ({
+            ...current, testing: { ...current.testing, ran: true, rows: aiResult?.values ?? [] },
+          }));
+        } catch (failure) {
+          if (running.current) setComparisonError(failure.message);
+        }
       }
     } finally {
       if (running.current) setBusy("");
@@ -126,7 +153,8 @@ export default function MayraChallengePage({ step, draft, onUpdate, onBack, onFi
             onChange={code => {
               setResult(undefined);
               setError("");
-              onUpdate(current => ({ ...current, testing: { ...current.testing, code, ran: false, results: [], rows: [] } }));
+              setComparisonError("");
+              onUpdate(current => ({ ...current, testing: { ...current.testing, code, ran: false, results: [], rows: [], verdict: "", rationale: "" } }));
             }} />
           <p className="field-hint">Escribe lo que sepas para continuar. Tu consulta puede estar incompleta o tener errores.</p>
           <div className="exercise-editor-actions">
@@ -146,7 +174,7 @@ export default function MayraChallengePage({ step, draft, onUpdate, onBack, onFi
         {draft.investigation.reviewed ? <>
           <pre className="code-block"><code>{AI_QUERY}</code></pre>
           <ActionButton variant="secondary" icon="play" disabled={Boolean(busy) || !testing.code.trim()} onClick={() => execute(true)}>Ejecutar ambas consultas</ActionButton>
-          {testing.ran && <><h3>Resultado de la IA</h3><SqlResult result={{ columns, values: testing.rows }} /></>}
+          {(testing.ran || comparisonError) && <><h3>Resultado de la IA</h3><SqlResult result={{ columns, values: testing.rows }} error={comparisonError} /></>}
         </> : <>
           <p>Escribe un intento para ver la propuesta. Puedes ejecutar las consultas cuando quieras comprobarlas.</p>
           <ActionButton variant="secondary" disabled={!testing.code.trim() || Boolean(busy)}

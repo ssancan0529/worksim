@@ -22,10 +22,10 @@ export default function GeneralVerificationPage({
   const observations = new Map(
     testing.observations.map((observation) => [observation.claimId, observation]),
   );
-  const ready = GENERAL_CLAIMS.every((claim) => {
-    const observation = observations.get(claim.id);
-    return observation?.classification && observation.evidence.trim().length >= 8;
-  }) && testing.omission.trim().length >= 8;
+  const ready = Boolean(analysis.approach.trim() && (
+    [...observations.values()].some(observation => observation.classification || observation.evidence.trim())
+    || testing.omission.trim()
+  ));
 
   return (
     <>
@@ -40,14 +40,18 @@ export default function GeneralVerificationPage({
         <ContentCard>
           <Field id="own-summary" label="Tu resumen" value={analysis.approach} rows={7}
             placeholder="Escribe tu versión para el equipo…"
-            onChange={approach => onUpdate(current => ({ ...current, analysis: { ...current.analysis, approach } }))} />
+            onChange={approach => onUpdate(current => ({
+              ...current,
+              analysis: { ...current.analysis, approach },
+              testing: { ...current.testing, ran: false, results: [], verdict: "", rationale: "" },
+            }))} />
           <details className="exercise-hint"><summary>Ver pista</summary><p>Comprueba qué debe ocurrir antes de confirmar el piloto.</p></details>
         </ContentCard>
       </div>
       <ContentCard>
         <h2>Resultado de tu revisión</h2>
         {testing.ran ? <ul className="exercise-criteria">{testing.results.map(check => (
-          <li key={check.id}><div><strong>{check.name}</strong><CriterionStatus passed={check.passed} /></div>
+          <li key={check.id}><div><strong>{check.name}</strong>{check.observed ? <CriterionStatus passed={check.passed} /> : <span className="criterion-status review">Sin respuesta</span>}</div>
             {check.explanation && <details><summary>Ver evidencia</summary><p>{check.explanation}</p><p>{check.source}</p></details>}
           </li>
         ))}</ul> : <p className="muted">Compara el resumen con las notas y comprueba tu revisión.</p>}
@@ -110,7 +114,7 @@ export default function GeneralVerificationPage({
         </label>
       </div>
       <ActionButton disabled={!ready} onClick={onVerify} icon="check">Comprobar mi revisión</ActionButton>
-      {!ready && <p className="validation-hint">Clasifica las afirmaciones y cita evidencia de las notas.</p>}
+      {!ready && <p className="validation-hint">Registra al menos una observación o un dato omitido. Puedes dejar los demás campos pendientes.</p>}
         </>}
       </ContentCard>
       <ExerciseDecision testing={testing} ready={testing.ran} onChange={onDecisionChange}

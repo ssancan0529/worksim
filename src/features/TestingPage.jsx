@@ -1,10 +1,10 @@
 import { useState } from "react";
 import ContentCard from "../components/ContentCard";
-import CriterionStatus from "../components/CriterionStatus";
 import ExerciseDecision from "../components/ExerciseDecision";
 import ExerciseEditor from "../components/ExerciseEditor";
 import ExerciseGuide from "../components/ExerciseGuide";
 import PageIntro from "../components/PageIntro";
+import { hasCurrentPetsReview } from "../lib/completion";
 import { ORIGINAL_CODE, REQUIREMENTS } from "../data/scenario";
 import PythonExecution from "./PythonExecution";
 
@@ -14,17 +14,18 @@ const options = [
 ];
 
 export default function TestingPage({ testing, onChange, onRun, onBack, onContinue }) {
-  const [revealed, setRevealed] = useState(testing.ran);
+  const [revealed, setRevealed] = useState(false);
   const [busy, setBusy] = useState(false);
+  const ready = hasCurrentPetsReview(testing);
   return (
     <>
       <PageIntro eyebrow="ADOPTA+ · PYTHON" title="Un problema en producción"
         description="Implementa el listado de mascotas y comprueba el resultado antes de contrastarlo con la IA." />
       <ExerciseGuide items={[["filter", "Aplica las condiciones al conjunto de mascotas."], ["order_by", "Define el orden de prioridad y cómo resolver empates."], ["offset y limit", "Seleccionan qué página devolver."]]} />
-      <PythonExecution code={testing.code} onSuccess={onRun} onBusyChange={setBusy} initialParameters={testing.parameters}
+      <PythonExecution code={testing.code} onSuccess={onRun} checks={ready ? testing.results : null} onBusyChange={setBusy} initialParameters={testing.parameters}
         onInvalidate={() => onChange("invalidateRun", null)} onParametersChange={value => onChange("parameters", value)}
         comparisonCode={revealed ? ORIGINAL_CODE : undefined}
-        onReveal={() => setRevealed(true)} canReveal={testing.ran}
+        onReveal={() => setRevealed(true)}
         brief={
           <ContentCard>
             <h2>Tu encargo</h2>
@@ -32,22 +33,18 @@ export default function TestingPage({ testing, onChange, onRun, onBack, onContin
             <ul className="plain-list">{REQUIREMENTS.map(requirement => <li key={requirement}>{requirement}</li>)}</ul>
           </ContentCard>
         }>
-        <ExerciseEditor id="sandbox-code" label="Tu función de Python" file="pets_controller.py"
-          value={testing.code} readOnly={busy} onChange={value => onChange("code", value)}
-          placeholder="def list_pets(species=None, city=None, limit=10, offset=0):" />
-        <details className="exercise-hint"><summary>Ver pista</summary><p>Piensa qué operaciones deben ocurrir antes de llamar a <code>.all()</code>.</p></details>
+        {run => (
+          <>
+            <ExerciseEditor id="sandbox-code" label="Tu función de Python" file="pets_controller.py"
+              value={testing.code} readOnly={busy} onRun={run} onChange={value => onChange("code", value)}
+              placeholder="def list_pets(species=None, city=None, limit=10, offset=0):" />
+            <p className="field-hint">Puedes empezar con una función que solo haga <code>return []</code>. Ejecuta tu intento para recibir retroalimentación y continuar con los criterios que queden por revisar.</p>
+            <details className="exercise-hint"><summary>Ver pista</summary><p>Piensa qué operaciones deben ocurrir antes de llamar a <code>.all()</code>.</p></details>
+          </>
+        )}
       </PythonExecution>
-      {testing.ran && <ContentCard>
-        <h2>Revisión de requisitos del código</h2>
-        <p className="muted">Esta revisión busca señales en el código. Contrástalas con el resultado de la ejecución.</p>
-        <ul className="exercise-criteria">{testing.results.map(result => (
-          <li key={result.id}><div><strong>{result.name}</strong><CriterionStatus passed={result.passed} /></div>
-            <details><summary>Ver evidencia</summary><p>{result.detail}</p></details>
-          </li>
-        ))}</ul>
-      </ContentCard>}
       <ExerciseDecision testing={testing} options={options} onChange={onChange}
-        onFinish={onContinue} onBack={onBack} ready={testing.ran && testing.executedCode === testing.code && revealed && !busy} />
+        onFinish={onContinue} onBack={onBack} ready={ready && !busy} />
     </>
   );
 }
