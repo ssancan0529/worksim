@@ -4,14 +4,14 @@ import ContentCard from "./ContentCard";
 import Field from "./Field";
 import PageActions from "./PageActions";
 
-export default function ExerciseDecision({ testing, options, onChange, onFinish, onBack, ready, finishLabel = "Guardar y ver informe", notReadyHint, rationaleLabel = "Justifica tu decisión con evidencia" }) {
+export default function ExerciseDecision({ testing, options, onChange, onFinish, onBack, ready, finishLabel = "Guardar y ver informe", notReadyHint, decisionLabel = "¿Qué harías con la propuesta de IA?", rationaleLabel = "Justifica tu decisión con evidencia" }) {
   const decisionReady = decisionIsComplete(testing, options.map(([value]) => value));
   return (
     <>
       {ready && <ContentCard>
         <h2>Tu recomendación</h2>
         <label className="general-select-field">
-          <span>¿Qué harías con la propuesta de IA?</span>
+          <span>{decisionLabel}</span>
           <select value={testing.verdict} onChange={event => onChange("verdict", event.target.value)}>
             <option value="">Selecciona una decisión</option>
             {options.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
