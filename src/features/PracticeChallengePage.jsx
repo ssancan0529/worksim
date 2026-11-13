@@ -174,7 +174,7 @@ function AuditResult({ lines }) {
   );
 }
 
-function PracticeExercise({ exercise, draft, onUpdate, onBack, onNext, onExit, nextLabel }) {
+function PracticeExercise({ exercise, draft, onUpdate, onBack, onNext, nextLabel }) {
   const attempt = draft.attempts[exercise.id];
   const readOnly = Boolean(draft.completedAt);
   const isSql = exercise.language === "SQL";
@@ -341,7 +341,6 @@ function PracticeExercise({ exercise, draft, onUpdate, onBack, onNext, onExit, n
       )}
       <PageActions>
         <ActionButton variant="secondary" icon="arrow-left" iconPosition="left" onClick={onBack}>Volver</ActionButton>
-        <ActionButton variant="secondary" onClick={onExit}>Salir al explorador</ActionButton>
         <ActionButton icon="arrow-right" disabled={!canAdvance || Boolean(busy)} onClick={onNext}>{nextLabel}</ActionButton>
       </PageActions>
       {!canAdvance && <p className="validation-hint">
@@ -411,7 +410,7 @@ export default function PracticeChallengePage(props) {
         : step === PRACTICE_CLOSING_STEP
           ? <PracticeClose {...props} />
           : <PracticeExercise key={exercises[step - 2].id} {...props}
-              exercise={exercises[step - 2]} onBack={onBack} onNext={onNext} onExit={onExit}
+              exercise={exercises[step - 2]} onBack={onBack} onNext={onNext}
               nextLabel={step === PRACTICE_CLOSING_STEP - 1 ? "Ir al cierre" : "Siguiente ejercicio"} />}
     </>
   );
