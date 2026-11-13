@@ -324,8 +324,6 @@ export default function App() {
         )),
         ran: false,
         results: [],
-        verdict: "",
-        rationale: "",
       },
     }));
   };
@@ -338,8 +336,6 @@ export default function App() {
         omission: value,
         ran: false,
         results: [],
-        verdict: "",
-        rationale: "",
       },
     }));
   };
@@ -355,28 +351,6 @@ export default function App() {
           executedCode: code,
           results,
           petsReviewVersion: 1,
-          runs: [
-            ...current.testing.runs,
-            {
-              at: new Date().toISOString(),
-              passed: results.filter((result) => result.passed).length,
-              total: results.length,
-            },
-          ],
-        },
-      };
-    });
-  };
-
-  const saveGeneralVerification = () => {
-    setDraft((current) => {
-      const results = evaluateGeneralReview(current.testing).results;
-      return {
-        ...current,
-        testing: {
-          ...current.testing,
-          ran: true,
-          results,
           runs: [
             ...current.testing.runs,
             {
@@ -630,7 +604,7 @@ export default function App() {
         return isGeneral
           ? <GeneralVerificationPage draft={draft} onUpdate={setDraft}
               onObservationChange={updateGeneralObservation} onOmissionChange={updateGeneralOmission}
-              onVerify={saveGeneralVerification} onDecisionChange={updateTesting}
+              onDecisionChange={updateTesting}
               onBack={() => moveTo(0)} onFinish={finishChallenge} />
           : <TestingPage testing={draft.testing} onChange={updateTesting} onRun={savePetsReview}
               onBack={() => moveTo(0)} onContinue={finishChallenge} />;

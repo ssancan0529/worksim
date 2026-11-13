@@ -84,11 +84,11 @@ export default function GeneralReportPage({
         <ul className="recommendation-list">
           {feedback.recommendations.map((item) => <li key={item}><Icon name="lightbulb" size={17} />{item}</li>)}
         </ul>
-        {draft.testing.bankMeeting && <>
-          <p><strong>Versión revisada:</strong> {draft.testing.executiveSummary}</p>
-          <p><strong>Respuesta a Dirección:</strong> {draft.testing.objection}</p>
+        {(draft.testing.executiveSummary || draft.testing.objection) && <>
+          {draft.testing.executiveSummary && <p><strong>Versión revisada:</strong> {draft.testing.executiveSummary}</p>}
+          {draft.testing.objection && <p><strong>Respuesta a Dirección:</strong> {draft.testing.objection}</p>}
         </>}
-        <p><strong>Tu justificación:</strong> {draft.testing.rationale || "Sin justificación registrada."}</p>
+        <p><strong>Tu explicación y propuesta:</strong> {draft.testing.rationale || "Sin justificación registrada."}</p>
       </ContentCard>
 
       <details className="content-card practice-details reflection-card">

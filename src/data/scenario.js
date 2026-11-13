@@ -41,7 +41,7 @@ export const GENERAL_CHALLENGE = {
   role: "Integrante de equipo",
   profession: "Pensamiento crítico",
   description:
-    "Revisa un resumen de reunión generado por IA antes de compartirlo y contrasta sus afirmaciones con las notas originales.",
+    "Decide si enviarías a Dirección un borrador sobre el piloto de transferencias. Contrástalo con las notas y explica qué cambiarías.",
   workspaceId: "sim-general-01",
   duration: 15,
   level: "Intermedio",
