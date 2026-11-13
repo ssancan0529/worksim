@@ -5,9 +5,9 @@ import { PROJECTS } from '../data/projects.js';
 import { isNewAcceptedSubmission, normalizeProjectWork } from './projects.js';
 
 test('finalization validates current evidence and decision without demanding a perfect score', () => {
-  const draft = {kind:'technical', started:true, testing:{code:'code', executedCode:'code',ran:true,results:[{passed:false}],verdict:'refactor',rationale:'Resultado incorrecto'}};
+  const draft = {kind:'technical', started:true, testing:{code:'code', executedCode:'code',petsReviewVersion:1,ran:true,results:[{passed:false}],verdict:'refactor',rationale:'Resultado incorrecto'}};
   assert.equal(canCompleteChallenge(draft),true);
-  for (const patch of [{ran:false},{executedCode:'old'},{verdict:'inventado'},{rationale:'  '}]) assert.equal(canCompleteChallenge({...draft,testing:{...draft.testing,...patch}}),false);
+  for (const patch of [{ran:false},{executedCode:'old'},{petsReviewVersion:undefined},{verdict:'inventado'},{rationale:'  '}]) assert.equal(canCompleteChallenge({...draft,testing:{...draft.testing,...patch}}),false);
   assert.equal(canCompleteChallenge({...draft,started:false}),false);
   assert.equal(canCompleteChallenge({kind:'sql',started:true, investigation:{reviewed:true},testing:{code:'SELECT',verdict:'modify',rationale:'Necesito corregir la sintaxis'}}),true);
 });

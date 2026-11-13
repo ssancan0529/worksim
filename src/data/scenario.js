@@ -97,9 +97,9 @@ export const GENERAL_CLAIMS = [
 
 export const REQUIREMENTS = [
   "Solo animales con is_adopted = False deben ser retornados.",
-  "La prioridad por urgency_level DESC se aplica a toda la colección filtrada.",
+  "Ordena por urgencia de mayor a menor y, en caso de empate, por ID ascendente.",
   "Los parámetros opcionales species y city pueden acumularse conjuntamente.",
-  "La paginación con limit y offset se aplica después del ordenamiento global.",
+  "Aplica limit y offset después de ordenar. Con limit=0 o sin coincidencias, devuelve una lista vacía.",
 ];
 
 export const SCHEMA = [

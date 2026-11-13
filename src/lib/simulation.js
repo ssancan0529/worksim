@@ -96,9 +96,9 @@ export function getReportFeedback(draft) {
       `Contrasta ${failed.map((test) => test.name.toLowerCase()).join(" y ")} con el requisito correspondiente antes de aprobar.`,
     );
   } else if (results.length) {
-    recommendations.push("La revisión estática no encontró señales de los fallos previstos; valida los casos en un entorno real antes de desplegar.");
+    recommendations.push("La revisión registrada cumple los criterios comprobados. Valida más casos antes de desplegar.");
   } else {
-    recommendations.push("Ejecuta la suite simulada y registra evidencia antes de cerrar tu dictamen.");
+    recommendations.push("Ejecuta tu código y registra evidencia antes de cerrar tu dictamen.");
   }
 
   if (selectedHypotheses.length) {

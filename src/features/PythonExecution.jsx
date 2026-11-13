@@ -1,14 +1,28 @@
 import { useEffect, useRef, useState } from "react";
 import ActionButton from "../components/ActionButton";
 import ContentCard from "../components/ContentCard";
+import CriterionStatus from "../components/CriterionStatus";
 import { executePython } from "../lib/python";
 
-export default function PythonExecution({ code, children, onSuccess, onBusyChange, comparisonCode, brief, onReveal, canReveal, initialParameters, onParametersChange, onInvalidate }) {
+function PetsChecks({ checks, own = false }) {
+  return (
+    <>
+      <p><strong>{checks.filter(check => check.passed).length} de {checks.length}</strong> criterios cumplidos.
+        {own && " Intento registrado. Puedes continuar."}</p>
+      <ul className="exercise-criteria">{checks.map(check => (
+        <li key={check.id}>
+          <div><strong>{check.name}</strong><CriterionStatus passed={check.passed} /></div>
+          <details><summary>Ver evidencia</summary><p>{check.detail}</p></details>
+        </li>
+      ))}</ul>
+    </>
+  );
+}
+
+export default function PythonExecution({ code, children, checks, onSuccess, onBusyChange, comparisonCode, brief, onReveal, initialParameters, onParametersChange, onInvalidate }) {
   const [parameters, setParameters] = useState(initialParameters || { species: "dog", city: "Guayaquil", limit: "10", offset: "0" });
   const [phase, setPhase] = useState("");
   const [response, setResponse] = useState(null);
-  const [executedCode, setExecutedCode] = useState("");
-  const [executedParameters, setExecutedParameters] = useState(null);
   const [comparison, setComparison] = useState(null);
   const activeRun = useRef(null);
   useEffect(() => () => {
@@ -35,17 +49,16 @@ export default function PythonExecution({ code, children, onSuccess, onBusyChang
       city: parameters.city.trim() || null,
       limit: Number(parameters.limit), offset: Number(parameters.offset),
     };
-    setExecutedCode(code);
-    setExecutedParameters(parameters);
     let task;
+    let ownFinished = false;
     try {
       task = executePython(code, args, () => setPhase("running"));
       activeRun.current = task;
       const result = await task.promise;
       if (activeRun.current !== task) return;
       setResponse(result);
-      if (result.error) return;
-      onSuccess();
+      ownFinished = true;
+      if (!result.error && Array.isArray(result.checks)) onSuccess(code, result.checks);
       if (compare) {
         setPhase("loading");
         const aiTask = executePython(comparisonCode, args, () => setPhase("running"));
@@ -55,7 +68,10 @@ export default function PythonExecution({ code, children, onSuccess, onBusyChang
         if (activeRun.current === aiTask) setComparison(aiResult);
       }
     } catch (error) {
-      if (!task || activeRun.current === task) setResponse({ error: error.message });
+      if (!task || activeRun.current === task) {
+        if (compare && ownFinished) setComparison({ error: error.message });
+        else setResponse({ error: error.message });
+      }
     } finally {
       if (!task || activeRun.current === task) {
         activeRun.current = null;
@@ -70,7 +86,7 @@ export default function PythonExecution({ code, children, onSuccess, onBusyChang
       {brief}
       <div className="exercise-code-results">
         <ContentCard>
-          {children}
+          {children(() => run())}
           <p>Se ejecuta el código del editor de arriba y se llama a <code>list_pets</code> con estos parámetros. Dispones de <code>db</code>, <code>Pet</code> y SQLAlchemy sobre 50 mascotas ficticias en SQLite.</p>
           <p className="field-hint">Especies de la muestra: <code>dog</code> y <code>cat</code>. Ciudades: Guayaquil y Quito. Deja especie o ciudad vacía para omitir ese filtro.</p>
           <div className="python-parameters">
@@ -91,12 +107,11 @@ export default function PythonExecution({ code, children, onSuccess, onBusyChang
         <ContentCard>
           <h2>Resultado de tu código</h2>
           <div aria-live="polite" aria-busy={busy}>
-            {!response && <p className="muted">Ejecuta tu código para comprobar los requisitos.</p>}
+            {!response && !checks && <p className="muted">Ejecuta tu código para comprobar los requisitos.</p>}
             {response && (
               <>
-                {(executedCode !== code || executedParameters !== parameters) && <p className="field-hint">Cambiaste el código o los parámetros. Ejecuta de nuevo para actualizar el resultado.</p>}
                 {response.output && <pre className="code-block">{response.output}</pre>}
-                {response.error && <pre className="code-block" role="alert">{response.error}</pre>}
+                {(response.error || response.caseError) && <pre className="code-block" role="alert">{response.error || response.caseError}</pre>}
                 {Array.isArray(response.result) && <p>{response.result.length} registro(s) devueltos.</p>}
                 {Array.isArray(response.result) && response.result.length > 0 && response.result.every((item) => item && typeof item === "object" && "id" in item) ? (
                   <div className="table-scroll"><table>
@@ -107,26 +122,28 @@ export default function PythonExecution({ code, children, onSuccess, onBusyChang
                 ) : response.result && <pre className="code-block">{JSON.stringify(response.result, null, 2)}</pre>}
               </>
             )}
+            {checks && <PetsChecks checks={checks} own />}
           </div>
         </ContentCard>
       </div>
       <ContentCard className="exercise-comparison">
-        <h2>Compara con la IA</h2>
+        <h2>Compara con la IA (opcional)</h2>
         {comparisonCode ? <>
           <pre className="code-block"><code>{comparisonCode}</code></pre>
           <ActionButton variant="secondary" icon="play" disabled={busy || !code.trim() || !validParameters}
             onClick={() => run(true)}>Ejecutar ambas funciones</ActionButton>
           <div aria-live="polite" aria-busy={busy}>
-            {comparison && executedCode === code && executedParameters === parameters && (
+            {comparison && (
               <>
                 <h3>Resultado de la IA</h3>
-                <pre className="code-block">{comparison.error || JSON.stringify(comparison.result, null, 2)}</pre>
+                <pre className="code-block">{comparison.error || comparison.caseError || JSON.stringify(comparison.result, null, 2)}</pre>
+                {comparison.checks && <PetsChecks checks={comparison.checks} />}
               </>
             )}
           </div>
         </> : <>
-          <p>Ejecuta tu función para ver la propuesta.</p>
-          <ActionButton variant="secondary" disabled={!canReveal || busy} onClick={onReveal}>Ver propuesta de la IA</ActionButton>
+          <p>Escribe un primer intento para ver la propuesta.</p>
+          <ActionButton variant="secondary" disabled={!code.trim() || busy} onClick={onReveal}>Ver propuesta de la IA</ActionButton>
         </>}
       </ContentCard>
     </>
