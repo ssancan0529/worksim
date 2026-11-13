@@ -349,11 +349,6 @@ export default function ChallengesPage({
         </section>
       )}
 
-      <div className="principle-strip">
-        <Icon name="clipboard-check" size={20} />
-        <div><strong>Práctica sin nota</strong><span>Registra tu razonamiento antes de consultar la IA y apoya tus decisiones en evidencia.</span></div>
-      </div>
-
       {completed && (
         <div className="learning-summary catalog-learning-summary">
           <span className="eyebrow">MI APRENDIZAJE</span>
@@ -361,31 +356,6 @@ export default function ChallengesPage({
           <span>{history.length} práctica{history.length === 1 ? "" : "s"} completada{history.length === 1 ? "" : "s"} · sin nota</span>
           {canOpenCurrentReport && <button type="button" onClick={onOpenReport}>Revisar el informe de esta práctica →</button>}
         </div>
-      )}
-
-      {history.length > 0 && (
-        <section className="history-panel">
-          <SectionTitle aside={<span className="eyebrow">{history.length} registro{history.length === 1 ? "" : "s"}</span>}>
-            Historial de prácticas
-          </SectionTitle>
-          <div className="history-list">
-            {history.slice(0, 5).map((record) => (
-              <details className="history-row" key={record.id}>
-                <summary>
-                  <Icon name="circle-check" size={17} />
-                  <span className="history-title"><strong>{record.title}</strong><span>{new Date(record.completedAt).toLocaleString("es", { dateStyle: "medium", timeStyle: "short" })}</span></span>
-                  <span className="history-verdict">{record.verdict}</span>
-                </summary>
-                <div className="history-detail">
-                  <p>{record.passed} de {record.total} comprobaciones con señales compatibles.</p>
-                  <p><strong>Justificación:</strong> {record.draft?.testing?.rationale || "Sin justificación registrada."}</p>
-                  {record.draft?.reflection?.evidence && <p><strong>Evidencia que cambió la decisión:</strong> {record.draft.reflection.evidence}</p>}
-                  {record.id === history[0]?.id && canOpenCurrentReport && <button className="text-button" type="button" onClick={onOpenReport}>Abrir informe actual →</button>}
-                </div>
-              </details>
-            ))}
-          </div>
-        </section>
       )}
     </>
   );
