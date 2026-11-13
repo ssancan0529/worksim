@@ -15,8 +15,8 @@ export default function ChallengeCard({ challenge, completed, inProgress, onStar
       tags={[challenge.environment, ...challenge.competencyType]}
       status={completed && <span className="experience-card-status">Completado anteriormente</span>}
       actions={
-        <ActionButton onClick={onStart} icon={completed ? "reset" : "arrow-right"}>
-          {completed ? "Practicar nuevamente" : inProgress ? "Continuar desafío" : "Iniciar desafío"}
+        <ActionButton onClick={onStart} icon={completed && !inProgress ? "reset" : "arrow-right"}>
+          {inProgress ? "Continuar desafío" : completed ? "Practicar nuevamente" : "Iniciar desafío"}
         </ActionButton>
       }
     />

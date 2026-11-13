@@ -1,3 +1,4 @@
+import { getChallengeProgress, latestCompletedRecord } from "./lib/challengeProgress";
 import { canCompleteChallenge } from "./lib/completion";
 import { useEffect, useState } from "react";
 import { MAYRA_CHALLENGE } from "./data/mayra";
@@ -133,6 +134,7 @@ export default function App() {
       ? initialState.activeChallengeId
       : CHALLENGE.id
   ));
+  const [reportRecord, setReportRecord] = useState(null);
   const [activeStep, setActiveStep] = useState(initialState.activeStep);
   const [notice, setNotice] = useState(
     initialState.error ? { message: initialState.error, variant: "warning" } : null,
@@ -153,7 +155,7 @@ export default function App() {
   const isMayra = activeChallengeId === MAYRA_CHALLENGE.id;
   const isPractice = activeChallengeId === PRACTICE_CHALLENGE.id;
   const steps = stepsForChallenge(activeChallengeId);
-  const draft = drafts[activeChallengeId] || createDraftForChallenge(activeChallengeId);
+  const draft = reportRecord?.draft || drafts[activeChallengeId] || createDraftForChallenge(activeChallengeId);
   const maxUnlockedStep = isPractice ? getPracticeStep(draft) : draft.completedAt ? 2 : 1;
 
   const setDraft = (update) => {
@@ -235,11 +237,7 @@ export default function App() {
 
   const goToWorkspaceHome = () => {
     if (activeStep > 0) {
-      if (isPractice) {
-        exitPractice();
-        return;
-      }
-      moveTo(0);
+      returnToChallenges();
       return;
     }
     setWorkspaceSection(workspace.defaultSection);
@@ -273,6 +271,7 @@ export default function App() {
   };
 
   const startChallenge = (challengeId = CHALLENGE.id) => {
+    setReportRecord(null);
     const selectedDraft = drafts[challengeId] || createDraftForChallenge(challengeId);
     setActiveChallengeId(challengeId);
     if (selectedDraft.started && !selectedDraft.completedAt) {
@@ -401,7 +400,10 @@ export default function App() {
       return;
     }
     const completedAt = new Date().toISOString();
-    const completedDraft = { ...draft, completedAt };
+    const completedDraft = { ...draft, completedAt,
+      ...(isGeneral ? { testing: { ...draft.testing, ran: true,
+        results: evaluateGeneralReview(draft.testing).results } } : {}),
+    };
     setDraft(completedDraft);
     setHistory((current) => [createHistoryRecord(activeChallenge, completedDraft), ...current]);
     recordValidActivity();
@@ -427,6 +429,13 @@ export default function App() {
   };
 
   const updateReflection = (key, value) => {
+    if (reportRecord) {
+      const updateRecord = record => ({ ...record, draft: { ...record.draft,
+        reflection: { ...record.draft.reflection, [key]: value } } });
+      setReportRecord(updateRecord);
+      setHistory(current => current.map(item => item.id === reportRecord.id ? updateRecord(item) : item));
+      return;
+    }
     setDraft((current) => ({
       ...current,
       reflection: { ...current.reflection, [key]: value },
@@ -501,7 +510,8 @@ export default function App() {
   };
 
   const returnToChallenges = () => {
-    setDraft(createDraftForChallenge(activeChallengeId));
+    setReportRecord(null);
+    setWorkspaceSection("explorer");
     moveTo(0);
   };
 
@@ -538,22 +548,23 @@ export default function App() {
   };
 
   const openReportFor = (challengeId) => {
+    if (!challengeId) return;
     const selectedDraft = drafts[challengeId];
-    if (!selectedDraft?.completedAt) {
+    const record = latestCompletedRecord(history, challengeId, getChallenge(challengeId).ticket);
+    const archived = !selectedDraft?.completedAt && record?.draft?.completedAt ? record : null;
+    if (!selectedDraft?.completedAt && !archived) {
       setNotice({ message: "No hay un informe completado para este desafío.", variant: "info" });
       return;
     }
+    setReportRecord(archived);
     setActiveChallengeId(challengeId);
     moveTo(stepsForChallenge(challengeId).length - 1);
   };
 
   const progress = Object.fromEntries(
-    Object.entries(drafts).map(([challengeId, challengeDraft]) => [
-      challengeId,
-      {
-        completed: Boolean(challengeDraft.completedAt),
-        inProgress: challengeDraft.started && !challengeDraft.completedAt,
-      },
+    [CHALLENGE, GENERAL_CHALLENGE, MAYRA_CHALLENGE, PRACTICE_CHALLENGE].map(challenge => [
+      challenge.id,
+      getChallengeProgress(drafts[challenge.id], latestCompletedRecord(history, challenge.id, challenge.ticket)),
     ]),
   );
 
@@ -564,9 +575,9 @@ export default function App() {
         draft={draft}
         onUpdate={setDraft}
         onNext={() => moveTo(activeStep + 1)}
-        onBack={() => moveTo(activeStep - 1)}
+        onBack={reportRecord ? returnToChallenges : () => moveTo(activeStep - 1)}
         onNavigate={navigate}
-        onExit={exitPractice}
+        onExit={returnToChallenges}
         onComplete={finishPractice}
         onExport={exportEvidence}
         onCopy={copySummary}
@@ -579,7 +590,7 @@ export default function App() {
         onUpdate={setDraft}
         onBack={() => moveTo(0)}
         onFinish={finishChallenge}
-        onHome={() => moveTo(0)}
+        onHome={returnToChallenges}
         onExport={exportEvidence}
       />;
     }
@@ -626,7 +637,8 @@ export default function App() {
       case 2: {
         const Report = isGeneral ? GeneralReportPage : ReportPage;
         return <Report draft={draft} history={history} onReflectionChange={updateReflection}
-          onBack={() => moveTo(1)} onRestart={returnToChallenges} onCopy={copySummary} onExport={exportEvidence} />;
+          onBack={reportRecord ? undefined : () => moveTo(1)} onHome={returnToChallenges}
+          onRestart={() => startChallenge(activeChallengeId)} onCopy={copySummary} onExport={exportEvidence} />;
       }
       default:
         return null;

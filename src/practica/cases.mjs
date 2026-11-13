@@ -72,7 +72,7 @@ export const exercises = [
   {
     id: "transfers", label: "Transferencias", language: "SQL", company: "Banco Horizonte",
     title: "Prepara el reporte de transferencias",
-    intro: "Tu supervisora necesita las tres transferencias confirmadas de mayor monto para revisar el reporte de Guayaquil.",
+    intro: "La supervisora de Operaciones solo puede revisar tres movimientos antes del cierre de Guayaquil. Prepara la lista de transferencias confirmadas de mayor monto y comprueba qué sucede si varias empatan en el tercer puesto.",
     requirements: [
       "Incluye transferencias confirmadas de Guayaquil por $100 o más.",
       "Ordena por monto de mayor a menor. En empate, pon primero el ID menor.",
@@ -99,7 +99,7 @@ export const exercises = [
   {
     id: "support", label: "Cola de soporte", language: "SQL", company: "Banco Horizonte",
     title: "Ordena la cola de soporte",
-    intro: "Atención al Cliente necesita decidir qué solicitudes bancarias abiertas atender primero con capacidad limitada.",
+    intro: "Una falla en la banca digital dejó casos abiertos y cerrados en la misma cola. El siguiente turno de Atención al Cliente usará tu lista para atender primero los casos abiertos más urgentes, sin reabrir solicitudes resueltas.",
     requirements: [
       "Incluye solo solicitudes abiertas con prioridad 3 o superior.",
       "Ordena la prioridad de mayor a menor. En empate, pon primero el ID menor.",
@@ -126,7 +126,7 @@ export const exercises = [
   {
     id: "withdrawal", label: "Retiros", language: "Python", company: "Banco Horizonte",
     title: "Valida un retiro",
-    intro: "Escribe una función que decida si se puede retirar un monto y devuelva el saldo correspondiente.",
+    intro: "Antes de actualizar el simulador de cajeros, el equipo quiere comprobar que una solicitud inválida conserve el saldo y que un retiro por el saldo exacto sí pueda completarse. Implementa la regla y deja evidencia para quien apruebe el cambio.",
     requirements: [
       "Define retirar(saldo, monto). Recibirás dos números enteros y el saldo inicial será mayor o igual a cero.",
       "Devuelve una tupla (código, saldo_final). Si el monto es cero o negativo, devuelve (400, saldo).",
