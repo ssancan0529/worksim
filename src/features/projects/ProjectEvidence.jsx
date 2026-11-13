@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { PROJECT_RUBRICS, SALES } from '../../data/projectRubrics';
+import { SALES } from '../../data/projectRubrics';
+import { BANK_TRANSACTIONS } from '../../data/bankProjects';
+import { getProjectRubric } from '../../lib/projects';
 import { executePython } from '../../lib/python';
 import ActionButton from '../../components/ActionButton';
 
 export default function ProjectEvidence({ project, stageIndex, work, onWorkChange }) {
-  const rubric = PROJECT_RUBRICS[project.id];
+  const rubric = getProjectRubric(project);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const running = useRef(null);
@@ -18,7 +20,7 @@ export default function ProjectEvidence({ project, stageIndex, work, onWorkChang
     let job;
     onWorkChange(current => ({ ...current, inventoryRun: null }));
     try {
-      job = executePython(code, {}, () => {}, 'inventory');
+      job = executePython(code, {}, () => {}, project.bank ? 'bank-movements' : 'inventory');
       running.current = job;
       const response = await job.promise;
       if (running.current !== job) return;
@@ -36,9 +38,9 @@ export default function ProjectEvidence({ project, stageIndex, work, onWorkChang
       <summary>Datos y condiciones de evaluación</summary>
       <p>{rubric.context}</p>
       {project.area === 'data' && <div className="table-scroll"><table>
-        <caption>Movimientos de ventas de práctica</caption>
-        <thead><tr>{['ID', 'Mes', 'Categoría', 'USD'].map(label => <th key={label}>{label}</th>)}</tr></thead>
-        <tbody>{SALES.map((row, index) => <tr key={index}>{row.map((value, column) => <td key={column}>{value}</td>)}</tr>)}</tbody>
+        <caption>{project.bank ? "Extracto bancario ficticio" : "Movimientos de ventas de práctica"}</caption>
+        <thead><tr>{(project.bank ? ['ID', 'Mes', 'Canal', 'Estado', 'USD'] : ['ID', 'Mes', 'Categoría', 'USD']).map(label => <th key={label}>{label}</th>)}</tr></thead>
+        <tbody>{(project.bank ? BANK_TRANSACTIONS : SALES).map((row, index) => <tr key={index}>{row.map((value, column) => <td key={column}>{value}</td>)}</tr>)}</tbody>
       </table></div>}
     </details>
     <h3>Evidencia verificable</h3>
@@ -53,13 +55,13 @@ export default function ProjectEvidence({ project, stageIndex, work, onWorkChang
         onChange={event => { const value = event.target.value; onWorkChange(current => ({ ...current, evidence: { ...current.evidence, [field.id]: value } })); }} />}
     </label>)}
     {project.id === 'api-de-inventario' && stageIndex === 1 && <>
-      <label className="project-evidence-field"><span>Función mover_stock en Python</span>
+      <label className="project-evidence-field"><span>{project.bank ? "Función registrar_movimiento en Python" : "Función mover_stock en Python"}</span>
         <textarea rows={10} spellCheck={false} value={work.inventoryCode || ''} disabled={busy}
-          placeholder="def mover_stock(stock, cantidad, operacion):"
+          placeholder={project.bank ? "def registrar_movimiento(ledger, movement_id, cents, kind):" : "def mover_stock(stock, cantidad, operacion):"}
           onChange={event => { const inventoryCode = event.target.value; setError(''); onWorkChange(current => ({ ...current, inventoryCode, inventoryRun: null })); }} />
       </label>
-      <p>Pruebas de entradas, salidas, límite de existencias y cantidades inválidas. El resultado debe tener aceptado (booleano) y stock (entero). La primera ejecución requiere descargar Python.</p>
-      <ActionButton disabled={busy || !work.inventoryCode?.trim()} onClick={runInventory}>{busy ? 'Ejecutando pruebas…' : 'Ejecutar pruebas de stock'}</ActionButton>
+      <p>{project.bank ? "Prueba el registro, los duplicados, los montos inválidos y la conservación del historial." : "Pruebas de entradas, salidas, límite de existencias y cantidades inválidas."} La primera ejecución descarga Python.</p>
+      <ActionButton disabled={busy || !work.inventoryCode?.trim()} onClick={runInventory}>{busy ? 'Ejecutando pruebas…' : 'Ejecutar pruebas de Python'}</ActionButton>
       {busy && <ActionButton variant="secondary" onClick={() => running.current?.cancel()}>Detener</ActionButton>}
       <div aria-live="polite">{error && <p role="alert">{error}</p>}
         {!busy && work.inventoryRun?.code === work.inventoryCode && <p>Pruebas registradas. Entrega el proyecto para revisar cada resultado.</p>}

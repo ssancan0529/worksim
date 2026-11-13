@@ -6,14 +6,14 @@ const rating = value => confidenceIsValid(value) ? value : null;
 
 function newAttempt() {
   return {
-    code: "", initialCode: null, prediction: "", notes: "", lines: [], none: false,
+    expectation: "", reasoning: "", code: "", initialCode: null, prediction: "", notes: "", lines: [], none: false,
     executedCode: null, preview: null, comparison: null, predictionLocked: false, runs: [],
   };
 }
 
 export function createPracticeDraft(started = false) {
   return {
-    kind: "practice", started, id: started ? crypto.randomUUID() : "",
+    kind: "practice", guidedReview: true, started, id: started ? crypto.randomUUID() : "",
     startedAt: started ? new Date().toISOString() : null,
     before: null, after: null, feel: "", note: "", completedAt: null,
     attempts: Object.fromEntries(exercises.map(({ id }) => [id, newAttempt()])),
@@ -28,6 +28,7 @@ export function normalizePracticeDraft(raw) {
     if (!isObject(attempt)) continue;
     draft.attempts[id] = {
       ...newAttempt(),
+      expectation: string(attempt.expectation), reasoning: string(attempt.reasoning),
       code: string(attempt.code),
       initialCode: typeof attempt.initialCode === "string" ? attempt.initialCode : null,
       prediction: string(attempt.prediction),
@@ -43,7 +44,7 @@ export function normalizePracticeDraft(raw) {
     };
   }
   return {
-    ...draft, id: string(raw.id) || draft.id,
+    ...draft, guidedReview: raw.guidedReview === true, id: string(raw.id) || draft.id,
     startedAt: string(raw.startedAt) || draft.startedAt,
     before: rating(raw.before), after: rating(raw.after), feel: string(raw.feel), note: string(raw.note),
     completedAt: string(raw.completedAt) || null,
@@ -76,7 +77,8 @@ export function getPracticeStep(draft) {
   if (!draft.started) return 0;
   if (draft.completedAt) return PRACTICE_CLOSING_STEP;
   if (!confidenceIsValid(draft.before)) return 1;
-  const pending = exercises.findIndex(exercise => !canAdvanceExercise(draft.attempts[exercise.id]));
+  const pending = exercises.findIndex(exercise => !canAdvanceExercise(draft.attempts[exercise.id])
+    || (draft.guidedReview && !draft.attempts[exercise.id].reasoning.trim()));
   return pending === -1 ? PRACTICE_CLOSING_STEP : pending + 2;
 }
 

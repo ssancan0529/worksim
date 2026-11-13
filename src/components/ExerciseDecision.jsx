@@ -4,7 +4,7 @@ import ContentCard from "./ContentCard";
 import Field from "./Field";
 import PageActions from "./PageActions";
 
-export default function ExerciseDecision({ testing, options, onChange, onFinish, onBack, ready }) {
+export default function ExerciseDecision({ testing, options, onChange, onFinish, onBack, ready, rationaleLabel = "Justifica tu decisión con evidencia" }) {
   return (
     <>
       {ready && <ContentCard>
@@ -16,7 +16,7 @@ export default function ExerciseDecision({ testing, options, onChange, onFinish,
             {options.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
           </select>
         </label>
-        <Field id="exercise-rationale" label="Justifica tu decisión con evidencia" value={testing.rationale}
+        <Field id="exercise-rationale" label={rationaleLabel} value={testing.rationale}
           rows={3} required onChange={value => onChange("rationale", value)} />
       </ContentCard>}
       <PageActions>

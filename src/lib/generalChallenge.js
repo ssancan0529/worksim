@@ -1,4 +1,4 @@
-import { GENERAL_CLAIMS } from "../data/scenario.js";
+import { BANK_MEETING_CLAIMS, GENERAL_CLAIMS } from "../data/scenario.js";
 
 export const GENERAL_CLASSIFICATIONS = [
   { value: "supported", label: "Respaldada por las notas" },
@@ -22,15 +22,21 @@ export function evaluateGeneralReview(testing) {
   const observations = new Map(
     (testing.observations || []).map((item) => [item.claimId, item]),
   );
-  const results = GENERAL_CLAIMS.map((claim) => {
+  const bank = testing.bankMeeting === true;
+  const results = (bank ? BANK_MEETING_CLAIMS : GENERAL_CLAIMS).map((claim) => {
     const observation = observations.get(claim.id) || {};
+    const classificationMatches = observation.classification === claim.expected;
+    const sourceMatches = claim.sourceIds?.includes(Number(observation.sourceId));
     return {
+      status: !observation.classification ? "Por revisar"
+        : !classificationMatches ? "No cumple"
+        : bank && !sourceMatches ? "Parcial" : "Cumple",
       id: claim.id,
       name: claim.text,
-      passed: observation.classification === claim.expected,
+      passed: classificationMatches && (!bank || sourceMatches),
       expected: claim.expected,
       observed: observation.classification || "",
-      evidence: observation.evidence || "",
+      evidence: bank && observation.sourceId ? [`Nota ${observation.sourceId}`, observation.evidence].filter(Boolean).join(" · ") : observation.evidence || "",
       source: claim.source,
       explanation: claim.explanation,
     };
@@ -39,12 +45,15 @@ export function evaluateGeneralReview(testing) {
   const omission = normalize(testing.omission);
   const identifiesMobileCheck = ["movil", "telefono", "celular"].some((word) => omission.includes(word));
   const identifiesSupportRisk = ["soporte", "cobertura", "capacidad"].some((word) => omission.includes(word));
+  const omitted = testing.omittedSources || [];
+  const omissionsPass = bank ? omitted.length === 2 && [2, 4].every(id => omitted.includes(id)) : identifiesMobileCheck && identifiesSupportRisk;
   results.push({
+    status: omissionsPass ? "Cumple" : bank && omitted.length ? "Parcial" : "Por revisar",
     id: "omission",
     name: "Información relevante omitida",
-    passed: identifiesMobileCheck && identifiesSupportRisk,
+    passed: omissionsPass,
     expected: "Identificar la validación de acceso móvil y la revisión de capacidad de soporte.",
-    observed: testing.omission || "",
+    observed: bank ? omitted.map(id => `Nota ${id}`).join(", ") : testing.omission || "",
     evidence: testing.omission || "",
     source: "Validar el acceso desde el teléfono antes de confirmar el piloto y revisar la cobertura de soporte.",
     explanation: "El resumen no incluye las dos condiciones que el equipo acordó revisar antes de fijar la fecha.",

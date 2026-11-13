@@ -1,6 +1,6 @@
 import { AVAILABLE_CHALLENGES } from "../../data/catalog";
 import { AREA_BY_ID } from "../../data/areas";
-import { PROJECTS } from "../../data/projects";
+import { BANK_PROJECTS as PROJECTS } from "../../data/bankProjects";
 import { getCurrentActivityStreak } from "../../lib/activityStreak";
 import {
   WorkspaceFrame,

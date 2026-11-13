@@ -68,11 +68,11 @@ Los escenarios y las propuestas atribuidas a IA están preparados en el código.
 | «¿Coincide el resultado de la consulta?» — Banco Horizonte | SQL real mediante SQL.js (SQLite en WebAssembly), sobre `transacciones` en memoria. | Comprobaciones deterministas de columnas, IDs seleccionados y orden. |
 | «Práctica de SQL y Python»: Transferencias y Cola de soporte | SQL real mediante SQL.js. | Resultados contrastados con dos conjuntos de datos por ejercicio. |
 | «Práctica de SQL y Python»: Retiros | Python real mediante Pyodide; se llama a `retirar(saldo, monto)`. | Cinco casos con salida y formato esperados. |
-| «Un problema en producción» — Adopta+ | Python real mediante Pyodide, SQLAlchemy y SQLite en memoria; se llama a `list_pets`. | Ocho casos ejecutan la función y comprueban filtros, orden, desempate, paginación y resultados vacíos. Un intento evaluado puede continuar con criterios pendientes. |
-| «El informe que no coincide» | Escenario y fuentes preparados; no ejecuta SQL ni Python. | Clasificaciones comparadas con respuestas esperadas; detección heurística de palabras en la omisión escrita. |
-| Proyecto «Diagnóstico de ventas» | No ejecuta el SQL ni los archivos del proyecto. | Evidencia estructurada: periodo, duplicados, devoluciones, cálculos e interpretación seleccionada. |
-| Proyecto «API de inventario» | Ejecuta únicamente la función de stock en Python con Pyodide. No levanta una API HTTP. | Diez casos de stock más comprobaciones del contrato y ejemplos declarados. |
-| Proyecto «Campaña de lanzamiento» | No ejecuta código ni publica una campaña. | Reglas sobre público, objetivo, presupuesto, promesa, cobertura, calendario y métricas. |
+| «Un problema en producción» — Banco Horizonte | Python real con Pyodide, SQLAlchemy y SQLite. | Once casos comprueban filtros, desempate, paginación y entradas inválidas. Los borradores de Adopta+ conservan el caso de mascotas. |
+| «El informe que no coincide» | Auditoría guiada con notas del piloto de transferencias digitales. | Clasificación y selección de notas. La versión ejecutiva y su defensa se revisan cualitativamente. |
+| Proyecto «Diagnóstico de transacciones» | Extracto ficticio con duplicados, reversiones y pendientes. | Comprueba indicadores y conciliación declarados. |
+| Proyecto «API de movimientos bancarios» | Ejecuta la función Python de registro. | Diez casos verifican aceptación y estado del registro. Las rutas HTTP se revisan cualitativamente. |
+| Proyecto «Campaña de un servicio bancario digital» | Brief y métricas ficticias. | Valida condiciones, calendario y conversión. La redacción y la defensa requieren revisión cualitativa. |
 
 Las evaluaciones de proyectos distinguen resultados completos, parciales, incorrectos y sin evidencia. Permiten corregir y volver a entregar, conservando las entregas anteriores. Las explicaciones abiertas requieren revisión cualitativa: cumplir los campos objetivos y escribir una explicación **no demuestra automáticamente que todo el razonamiento sea correcto**. Las evaluaciones históricas se conservan; algunas fueron realizadas con la rúbrica anterior basada en palabras clave.
 
@@ -105,7 +105,7 @@ Vite genera `dist/`. Las entradas son `src/index.html` y `src/practica/index.htm
 ### Conexión y publicación
 
 - SQL.js y su archivo WASM se incluyen localmente desde `vendor/`; no necesitan un CDN externo para ejecutar SQL una vez disponibles los archivos de la aplicación.
-- Python carga Pyodide 0.27.7 desde jsDelivr. Adopta+ descarga además SQLAlchemy y SQLite a través de Pyodide. Se necesita conexión al CDN cuando estos recursos no están en caché; no hay garantía de funcionamiento sin conexión.
+- Python carga Pyodide 0.27.7 desde jsDelivr. El desafío de producción descarga además SQLAlchemy y SQLite a través de Pyodide. Se necesita conexión al CDN cuando estos recursos no están en caché; no hay garantía de funcionamiento sin conexión.
 - Las fuentes Inter y JetBrains Mono se solicitan a Google Fonts. Si no cargan, se usan las fuentes alternativas del CSS.
 - Guardar avances y aplicar reglas de evaluación son operaciones locales. No requieren un servicio remoto de evaluación. No hay un modo offline completo implementado.
 

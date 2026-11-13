@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import ActionButton from "../components/ActionButton";
+import ReviewPrompt from "../components/ReviewPrompt";
 import ContentCard from "../components/ContentCard";
 import CriterionStatus from "../components/CriterionStatus";
 import ExerciseTable from "../components/ExerciseTable";
@@ -181,10 +182,12 @@ function PracticeExercise({ exercise, draft, onUpdate, onBack, onNext, nextLabel
   const [busy, setBusy] = useState("");
   const [error, setError] = useState(null);
   const currentRun = useRef(null);
-  const ready = Boolean(attempt.code.trim()) && !readOnly && !busy;
+  const ready = Boolean(attempt.code.trim()) && (!draft.guidedReview || Boolean(attempt.expectation.trim())) && !readOnly && !busy;
   const readyToCompare = ready && (isSql ? Boolean(attempt.prediction) : attempt.lines.length > 0 || attempt.none);
   const result = getAttemptResult(attempt);
-  const canAdvance = readOnly || canAdvanceExercise(attempt) && !busy && !error;
+  const reviewed = canAdvanceExercise(attempt) && !busy && !error;
+  const canAdvance = readOnly || reviewed && (!draft.guidedReview || Boolean(attempt.reasoning.trim()));
+  const pending = result?.checks?.find(check => !check.passed);
 
   useEffect(() => () => {
     const job = currentRun.current;
@@ -254,6 +257,11 @@ function PracticeExercise({ exercise, draft, onUpdate, onBack, onNext, nextLabel
         {isSql && <ExerciseTable columns={exercise.columns} rows={exercise.rows}
           caption={`Tabla ${exercise.table}`} collapsible />}
       </ContentCard>
+      <ContentCard>
+        <Field id={`expectation-${exercise.id}`} label="Antes de ejecutar: ¿qué resultado esperas o qué caso límite probarías?"
+          value={attempt.expectation} rows={2} disabled={readOnly || Boolean(busy)}
+          onChange={expectation => updateAttempt({ expectation })} />
+      </ContentCard>
       <div className="exercise-code-results">
         <ContentCard>
           <ExerciseEditor id={`editor-${exercise.id}`} label={isSql ? "Tu consulta SQL" : "Tu función de Python"}
@@ -262,10 +270,10 @@ function PracticeExercise({ exercise, draft, onUpdate, onBack, onNext, nextLabel
             placeholder={isSql ? `SELECT * FROM ${exercise.table};` : "def retirar(saldo, monto):"}
             onRun={() => execute(false)} onChange={code => {
               setError(null);
-              updateAttempt({ code, executedCode: null, preview: null, comparison: null }, true);
+              updateAttempt({ code, reasoning: "", executedCode: null, preview: null, comparison: null }, true);
             }} />
           <p className="field-hint exercise-start-hint">
-            Ejecuta tu intento para continuar. No necesitas cumplir todos los criterios del encargo.
+            Anota qué esperas y ejecuta tu intento. Puedes continuar con criterios pendientes.
             {isSql && <> Puedes empezar con <code>SELECT 1;</code>.</>}
           </p>
           <div className="exercise-editor-actions">
@@ -278,7 +286,7 @@ function PracticeExercise({ exercise, draft, onUpdate, onBack, onNext, nextLabel
         <ContentCard>
           <h2>Resultado de tu código</h2>
           <div aria-live="polite" aria-busy={Boolean(busy)}>
-            {canAdvance && !readOnly && !busy && <p className="field-hint">Intento registrado. Puedes continuar.</p>}
+            {reviewed && !readOnly && !busy && <p className="field-hint">Intento registrado. Revisa la salida para explicar tu decisión.</p>}
             {busy === "preview" ? <p className="muted">Ejecutando casos de prueba…</p>
               : error?.target === "preview" ? <StatusNotice variant="warning">{error.message}</StatusNotice>
                 : <ExerciseResult result={result} emptyText="Ejecuta tu código para comprobar los requisitos. Puedes avanzar sin cumplirlos todos." />}
@@ -290,8 +298,8 @@ function PracticeExercise({ exercise, draft, onUpdate, onBack, onNext, nextLabel
         <h2>Compara con la IA (opcional)</h2>
         {attempt.initialCode === null ? (
           <>
-            <p>Escribe tu primera solución para ver la propuesta.</p>
-            <ActionButton variant="secondary" disabled={!ready} onClick={() => updateAttempt({ initialCode: attempt.code })}>Ver propuesta de la IA</ActionButton>
+            <p>Registra qué esperas y escribe un primer intento para contrastarlo con el ejemplo preparado.</p>
+            <ActionButton variant="secondary" disabled={!ready || (draft.guidedReview && !attempt.expectation.trim())} onClick={() => updateAttempt({ initialCode: attempt.code })}>Ver propuesta de la IA</ActionButton>
           </>
         ) : (
           <>
@@ -333,18 +341,28 @@ function PracticeExercise({ exercise, draft, onUpdate, onBack, onNext, nextLabel
           <ExerciseResult result={attempt.comparison.ai} />
           {isSql ? (
             <details className="exercise-hint">
-              <summary>Ver una solución posible</summary>
-              <pre className="code-block"><code>{exercise.reference}</code></pre>
+              <summary>{attempt.reasoning.trim() || !draft.guidedReview ? "Ver una solución posible" : "Registra tu interpretación para consultar la referencia"}</summary>
+              {(attempt.reasoning.trim() || !draft.guidedReview) && <pre className="code-block"><code>{exercise.reference}</code></pre>}
             </details>
           ) : <AuditResult lines={attempt.lines} />}
         </ContentCard>
       )}
+      {(reviewed || readOnly) && <ContentCard>
+        <ReviewPrompt question={pending
+          ? `¿Qué salida te permite revisar «${pending.label}»?`
+          : "¿Qué caso adicional comprobarías antes de recomendar este resultado?"}
+          hint={pending?.evidence || "Considera un empate, un valor límite o un conjunto vacío."} />
+        <Field id={`reasoning-${exercise.id}`} label="Compara lo esperado con lo obtenido y explica qué cambiarías o probarías"
+          value={attempt.reasoning} rows={2} disabled={readOnly}
+          onChange={reasoning => updateAttempt({ reasoning })} />
+        <p className="field-hint">La interpretación queda para revisión cualitativa.</p>
+      </ContentCard>}
       <PageActions>
         <ActionButton variant="secondary" icon="arrow-left" iconPosition="left" onClick={onBack}>Volver</ActionButton>
         <ActionButton icon="arrow-right" disabled={!canAdvance || Boolean(busy)} onClick={onNext}>{nextLabel}</ActionButton>
       </PageActions>
       {!canAdvance && <p className="validation-hint">
-        Ejecuta la versión actual sin errores de sintaxis o de carga para avanzar. Los criterios del encargo pueden quedar por revisar.
+        {reviewed ? "Registra qué observaste y cómo lo comprobarías para continuar." : "Ejecuta la versión actual para obtener retroalimentación. Puedes continuar con criterios pendientes."}
       </p>}
     </>
   );
@@ -365,7 +383,7 @@ function PracticeClose({ draft, onUpdate, onExit, onComplete, onBack, onExport, 
         <h2>Resumen de tu intento</h2>
         <ul className="exercise-criteria exercise-summary">
           {exercises.map(exercise => {
-            return <li key={exercise.id}><div><strong>{exercise.label}</strong><span>{attemptResultLabel(draft.attempts[exercise.id])}</span></div></li>;
+            return <li key={exercise.id}><div><strong>{exercise.label}</strong><span>{attemptResultLabel(draft.attempts[exercise.id])}</span>{draft.attempts[exercise.id].reasoning && <p>{draft.attempts[exercise.id].reasoning}</p>}</div></li>;
           })}
           <li><div><strong>Hallazgos en Python</strong><span>{draft.attempts.withdrawal.comparison
             ? `${audit.hits} de ${audit.total}` : "Revisión opcional pendiente"}</span></div></li>

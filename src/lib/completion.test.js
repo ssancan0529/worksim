@@ -9,7 +9,7 @@ test('finalization validates current evidence and decision without demanding a p
   assert.equal(canCompleteChallenge(draft),true);
   for (const patch of [{ran:false},{executedCode:'old'},{petsReviewVersion:undefined},{verdict:'inventado'},{rationale:'  '}]) assert.equal(canCompleteChallenge({...draft,testing:{...draft.testing,...patch}}),false);
   assert.equal(canCompleteChallenge({...draft,started:false}),false);
-  assert.equal(canCompleteChallenge({kind:'sql',started:true, investigation:{reviewed:true},testing:{code:'SELECT',verdict:'modify',rationale:'Necesito corregir la sintaxis'}}),true);
+  assert.equal(canCompleteChallenge({kind:'sql',started:true, investigation:{reviewed:true},testing:{code:'SELECT',auditExecutedCode:'SELECT',ran:true,verdict:'modify',rationale:'Necesito corregir la sintaxis'}}),true);
 });
 
 test('accepted identical project submissions do not count again after reload or later revisions', () => {

@@ -44,17 +44,23 @@ Adopta+ carga los paquetes `sqlalchemy` y `sqlite3` antes de emitir la señal de
 
 ## Ejecución real frente a evaluación
 
-### Adopta+: comprobación del código ejecutado
+### Banco Horizonte: revisión guiada
+
+El reto de producción ejecuta `list_operations` con SQLAlchemy y SQLite. La suite comprueba once casos sobre filtros, orden estable, páginas, resultados vacíos y parámetros inválidos. La API de movimientos ejecuta diez casos de la función `registrar_movimiento`; el contrato HTTP se documenta y se revisa cualitativamente.
+
+Comunicación contrasta clasificaciones y referencias a notas del piloto. Los proyectos bancarios usan la rúbrica 3 y un espacio de guardado separado. Los proyectos anteriores conservan sus datos, rúbricas y entregas, y se pueden abrir desde la ficha bancaria si hay trabajo guardado. Las preguntas guiadas se eligen con reglas locales.
+
+### Adopta+: versión anterior
 
 El worker ejecuta `list_pets` con los parámetros del editor para mostrar la salida y usa `src/lib/petsCheck.py` para comprobar ocho casos con una base SQLite nueva por llamada. Los resultados muestran evidencia de los filtros, el orden por urgencia, el desempate por ID, la paginación y los casos sin filas o con límite cero.
 
 Un intento evaluado habilita el dictamen aunque queden criterios pendientes. Los errores al cargar o definir la función requieren una nueva ejecución. Si un caso falla al llamar a la función, el error aparece como evidencia. Al editar el código o los parámetros se invalida la revisión. Los informes anteriores conservan su evaluación original por patrones de texto.
 
-### «El informe que no coincide»: escenario sin ejecución de código
+### «El informe que no coincide»: versión anterior
 
 Las fuentes y afirmaciones del escenario están preparadas en `src/data/scenario.js`. `src/lib/generalChallenge.js` compara la clasificación elegida con la esperada. Para la información omitida busca grupos de palabras relacionados con móvil y soporte. Esta última comprobación es heurística: no comprende automáticamente la justificación ni sus negaciones. No consulta fuentes externas, ejecuta SQL/Python ni llama a un modelo de IA.
 
-### Proyectos: rúbrica determinista y revisión cualitativa
+### Proyectos anteriores: rúbrica determinista y revisión cualitativa
 
 `evaluateProjectSubmission()` en `src/lib/projects.js` usa la rúbrica de `src/data/projectRubrics.js`:
 
@@ -95,7 +101,7 @@ Los archivos históricos `screens.html`, `style-source.html` y `sql-worker.js` d
 ## Actividad y vigencia de resultados
 
 - Abrir secciones no cuenta como actividad. Finalizar un desafío según sus condiciones o entregar un proyecto que cumple la validación objetiva sí cuenta.
-- `src/lib/completion.js` comprueba decisiones válidas y justificación antes de finalizar. Adopta+ exige una ejecución vigente; no exige aprobar todos los criterios heurísticos. Banco Horizonte permite un intento parcial y comparación revisada; la práctica integrada conserva sus condiciones propias de ejecución y confianza posterior.
+- `src/lib/completion.js` comprueba decisiones válidas y justificación antes de finalizar. Adopta+ exige una ejecución vigente; permite criterios pendientes. Banco Horizonte permite un intento parcial y comparación revisada; la práctica integrada conserva sus condiciones propias de ejecución y confianza posterior.
 - Editar el código de Adopta+ o cambiar sus parámetros elimina los resultados visibles e invalida la ejecución. Los parámetros se guardan junto al borrador. Iniciar otra ejecución también invalida la anterior, incluso si el nuevo intento falla.
 - Una entrega de proyecto idéntica a otra entrega aceptada, actual o histórica, no cuenta nuevamente como actividad. Se compara el contenido de respuestas, evidencia y código; una modificación aceptada sí puede contar. Esto no certifica que el cambio sea sustancial ni evita manipulación de localStorage.
 - `activityStreak.js` registra como máximo un día activo por fecha local, mantiene días consecutivos y reinicia tras una interrupción. La racha se conserva en localStorage junto al progreso.
