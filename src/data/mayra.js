@@ -7,7 +7,7 @@ export const MAYRA_CHALLENGE = {
   profession: "Análisis de datos",
   description: "Escribe una consulta para el Banco Horizonte, verifica qué filas devuelve y compárala con la propuesta de IA.",
   duration: 15,
-  level: "Básico",
+  level: "Intermedio",
   environment: "SQL / SQLite",
   categoryId: "data",
   competencyType: ["Análisis de datos", "Pensamiento crítico", "Alfabetización en IA"],

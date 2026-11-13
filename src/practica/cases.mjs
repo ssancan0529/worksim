@@ -6,7 +6,7 @@ export const PRACTICE_CHALLENGE = {
   role: "Analista de datos junior",
   profession: "Análisis de datos",
   duration: 20,
-  level: "Básico",
+  level: "Intermedio",
   environment: "SQLite / Python",
   categoryId: "data",
   competencyType: ["Análisis de datos", "Validación técnica", "Resolución de problemas"],
@@ -97,9 +97,9 @@ export const exercises = [
     ],
   },
   {
-    id: "support", label: "Cola de soporte", language: "SQL", company: "Mesa de soporte",
+    id: "support", label: "Cola de soporte", language: "SQL", company: "Banco Horizonte",
     title: "Ordena la cola de soporte",
-    intro: "El equipo de soporte quiere ver las solicitudes abiertas que debe atender primero.",
+    intro: "Atención al Cliente necesita decidir qué solicitudes bancarias abiertas atender primero con capacidad limitada.",
     requirements: [
       "Incluye solo solicitudes abiertas con prioridad 3 o superior.",
       "Ordena la prioridad de mayor a menor. En empate, pon primero el ID menor.",

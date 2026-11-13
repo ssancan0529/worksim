@@ -1,4 +1,7 @@
 import { useState } from "react";
+import Field from "../components/Field";
+import ReviewPrompt from "../components/ReviewPrompt";
+import { BANK_OPERATION_PROPOSAL, BANK_OPERATION_REQUIREMENTS } from "../data/bankOperations";
 import ContentCard from "../components/ContentCard";
 import ExerciseDecision from "../components/ExerciseDecision";
 import ExerciseEditor from "../components/ExerciseEditor";
@@ -16,35 +19,48 @@ const options = [
 export default function TestingPage({ testing, onChange, onRun, onBack, onContinue }) {
   const [revealed, setRevealed] = useState(false);
   const [busy, setBusy] = useState(false);
+  const bank = testing.bankOperations === true;
   const ready = hasCurrentPetsReview(testing);
+  const pending = testing.results.find(check => !check.passed);
   return (
     <>
-      <PageIntro eyebrow="ADOPTA+ · PYTHON" title="Un problema en producción"
-        description="Implementa el listado de mascotas y comprueba el resultado antes de contrastarlo con la IA." />
+      <PageIntro eyebrow={bank ? "BANCO HORIZONTE · PYTHON" : "ADOPTA+ · PYTHON"} title="Un problema en producción"
+        description={bank ? "Investiga por qué desaparecen operaciones al cambiar de página en el listado interno." : "Implementa el listado de mascotas y comprueba el resultado antes de contrastarlo con la IA."} />
       <ExerciseGuide items={[["filter", "Aplica las condiciones al conjunto de mascotas."], ["order_by", "Define el orden de prioridad y cómo resolver empates."], ["offset y limit", "Seleccionan qué página devolver."]]} />
-      <PythonExecution code={testing.code} onSuccess={onRun} checks={ready ? testing.results : null} onBusyChange={setBusy} initialParameters={testing.parameters}
+      {bank && <ContentCard>
+        <Field id="bank-plan" label="Tu estrategia inicial: explica filtros, orden, paginación y una prueba"
+          value={testing.plan || ""} rows={3} disabled={busy} onChange={value => onChange("plan", value)} />
+      </ContentCard>}
+      <PythonExecution bank={bank} canRun={!bank || Boolean(testing.plan?.trim())} canReveal={!bank || Boolean(testing.plan?.trim() && ready)} code={testing.code} onSuccess={onRun} checks={ready ? testing.results : null} onBusyChange={setBusy} initialParameters={testing.parameters}
         onInvalidate={() => onChange("invalidateRun", null)} onParametersChange={value => onChange("parameters", value)}
-        comparisonCode={revealed ? ORIGINAL_CODE : undefined}
+        comparisonCode={revealed ? (bank ? BANK_OPERATION_PROPOSAL : ORIGINAL_CODE) : undefined}
         onReveal={() => setRevealed(true)}
         brief={
           <ContentCard>
             <h2>Tu encargo</h2>
-            <p>Escribe <code>list_pets(species=None, city=None, limit=10, offset=0)</code>. Usa la sesión <code>db</code> y el modelo <code>Pet</code>.</p>
-            <ul className="plain-list">{REQUIREMENTS.map(requirement => <li key={requirement}>{requirement}</li>)}</ul>
+            <p>Implementa <code>{bank ? "list_operations(kind=None, status=None, limit=10, offset=0)" : "list_pets(species=None, city=None, limit=10, offset=0)"}</code>.</p>
+            <ul className="plain-list">{(bank ? BANK_OPERATION_REQUIREMENTS : REQUIREMENTS).map(requirement => <li key={requirement}>{requirement}</li>)}</ul>
           </ContentCard>
         }>
         {run => (
           <>
-            <ExerciseEditor id="sandbox-code" label="Tu función de Python" file="pets_controller.py"
+            <ExerciseEditor id="sandbox-code" label="Tu función de Python" file={bank ? "operaciones.py" : "pets_controller.py"}
               value={testing.code} readOnly={busy} onRun={run} onChange={value => onChange("code", value)}
-              placeholder="def list_pets(species=None, city=None, limit=10, offset=0):" />
+              placeholder={bank ? "def list_operations(kind=None, status=None, limit=10, offset=0):" : "def list_pets(species=None, city=None, limit=10, offset=0):"} />
             <p className="field-hint">Puedes empezar con una función que solo haga <code>return []</code>. Ejecuta tu intento para recibir retroalimentación y continuar con los criterios que queden por revisar.</p>
             <details className="exercise-hint"><summary>Ver pista</summary><p>Piensa qué operaciones deben ocurrir antes de llamar a <code>.all()</code>.</p></details>
           </>
         )}
       </PythonExecution>
-      <ExerciseDecision testing={testing} options={options} onChange={onChange}
-        onFinish={onContinue} onBack={onBack} ready={ready && !busy} />
+      {bank && ready && <ReviewPrompt question={pending
+        ? `¿Qué cambio harías para comprobar «${pending.name}» de nuevo?`
+        : "¿Qué prueba añadirías para asegurar que dos páginas consecutivas no repiten operaciones?"}
+        hint={pending?.id.startsWith("invalid") ? "Comprueba los tipos y rangos antes de consultar."
+          : ["types", "combined", "status"].includes(pending?.id) ? "Prueba cada filtro por separado antes de combinarlos."
+          : ["empty", "zero"].includes(pending?.id) ? "Distingue una lista vacía de un error de ejecución."
+          : "Revisa el orden global y el desempate antes de seleccionar la página."} />}
+      <ExerciseDecision rationaleLabel={bank ? "Cita una prueba, explica qué cambiaste y justifica tu recomendación" : undefined} testing={testing} options={options} onChange={onChange}
+        onFinish={onContinue} onBack={onBack} ready={ready && !busy && (!bank || Boolean(testing.plan?.trim()))} />
     </>
   );
 }

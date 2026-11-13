@@ -37,14 +37,14 @@ export const GENERAL_CHALLENGE = {
   id: "general-meeting-summary",
   ticket: "DEMO-001",
   title: "El informe que no coincide",
-  company: "Equipo de proyecto",
+  company: "Banco Horizonte",
   role: "Integrante de equipo",
   profession: "Pensamiento crítico",
   description:
     "Revisa un resumen de reunión generado por IA antes de compartirlo y contrasta sus afirmaciones con las notas originales.",
   workspaceId: "sim-general-01",
   duration: 15,
-  level: "Principiante",
+  level: "Intermedio",
   environment: "Resumen de reunión",
   category: "General / Pensamiento crítico",
 };
@@ -186,3 +186,32 @@ export const createInitialGeneralDraft = () => {
     },
   };
 };
+
+export const BANK_MEETING_NOTES = [
+  "Mateo: Finanzas enviará el presupuesto del piloto de transferencias digitales el miércoles. El equipo confirma el plazo.",
+  "Alicia: La fecha del piloto sigue pendiente hasta validar el acceso desde la banca móvil.",
+  "Paula: El martes confirmaré la disponibilidad de Cumplimiento para revisar los avisos. Todavía no se asigna responsable del lanzamiento.",
+  "Rosa: Atención al Cliente necesita comprobar la cobertura de soporte antes de aprobar el piloto.",
+  "Acuerdo final: Dirección revisará la fecha tras la prueba móvil y la confirmación de cobertura.",
+];
+
+const bankSummary = [
+  "Finanzas enviará el presupuesto el miércoles.",
+  "El piloto de transferencias digitales iniciará el 18 de septiembre.",
+  "Paula dirigirá el lanzamiento y notificará a los clientes.",
+  "El piloto puede aprobarse sin riesgos operativos pendientes.",
+];
+
+const bankSources = [[1], [2, 5], [3], [4, 5]];
+export const BANK_MEETING_CLAIMS = GENERAL_CLAIMS.map((claim, index) => ({
+  ...claim,
+  text: bankSummary[index],
+  sourceIds: bankSources[index],
+  source: bankSources[index].map(id => BANK_MEETING_NOTES[id - 1]).join(" "),
+  explanation: [
+    "Finanzas confirmó el plazo del presupuesto.",
+    "La fecha sigue pendiente de validaciones.",
+    "Paula confirmó una revisión de disponibilidad, no la dirección del lanzamiento.",
+    "La cobertura de soporte sigue pendiente de comprobación.",
+  ][index],
+}));

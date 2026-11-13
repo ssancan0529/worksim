@@ -24,6 +24,7 @@ import { verdictLabel } from "./lib/simulation";
 import { loadWorksimState, saveWorksimState } from "./lib/storage";
 import { recordActivity } from "./lib/activityStreak";
 import { getWorkspace } from "./data/workspaces";
+import { BANK_PROJECTS } from "./data/bankProjects";
 import { PROJECTS } from "./data/projects";
 import { getProjectProgress } from "./lib/projects";
 import { exercises, PRACTICE_CHALLENGE, PRACTICE_CLOSING_STEP, PRACTICE_STEPS, scoreDetection } from "./practica/cases.mjs";
@@ -44,12 +45,18 @@ function loadThemePreference() {
 
 function createDraftForChallenge(challengeId) {
   if (challengeId === PRACTICE_CHALLENGE.id) return createPracticeDraft();
-  if (challengeId === GENERAL_CHALLENGE.id) return createInitialGeneralDraft();
+  if (challengeId === GENERAL_CHALLENGE.id) {
+    const draft = createInitialGeneralDraft();
+    draft.testing.bankMeeting = true;
+    return draft;
+  }
   const draft = createInitialDraft();
   draft.testing.code = "";
   if (challengeId === MAYRA_CHALLENGE.id) {
     draft.kind = "sql";
     draft.testing.rows = [];
+  } else {
+    draft.testing.bankOperations = true;
   }
   return draft;
 }
@@ -114,6 +121,7 @@ export default function App() {
   });
   const [history, setHistory] = useState(initialState.history);
   const [projectWork, setProjectWork] = useState(initialState.projectWork);
+  const [bankProjectWork, setBankProjectWork] = useState(initialState.bankProjectWork);
   const [activityStreak, setActivityStreak] = useState(initialState.activityStreak);
   const [workspaceSection, setWorkspaceSection] = useState(() => (
     initialState.activeStep === 0 && new URLSearchParams(window.location.search).get("seccion") === "proyectos"
@@ -131,7 +139,12 @@ export default function App() {
   );
   const [exitConfirmationOpen, setExitConfirmationOpen] = useState(false);
   const projectProgress = Object.fromEntries(
-    PROJECTS.map((project) => [project.id, getProjectProgress(project, projectWork[project.id])]),
+    BANK_PROJECTS.map(project => {
+      const current = getProjectProgress(project, bankProjectWork[project.id]);
+      const previous = getProjectProgress(PROJECTS.find(item => item.id === project.id), projectWork[project.id]);
+      return [project.id, { ...current, completed: current.completed || previous.completed,
+        inProgress: current.inProgress || previous.inProgress }];
+    }),
   );
   const [theme, setTheme] = useState(loadThemePreference);
   const recordValidActivity = () => setActivityStreak(current => recordActivity(current));
@@ -159,14 +172,14 @@ export default function App() {
 
   useEffect(() => {
     try {
-      saveWorksimState({ drafts, activeChallengeId, history, projectWork, activityStreak });
+      saveWorksimState({ drafts, activeChallengeId, history, projectWork, bankProjectWork, activityStreak });
     } catch {
       setNotice({
         message: "No se pudieron guardar los cambios en este navegador.",
         variant: "error",
       });
     }
-  }, [drafts, activeChallengeId, history, projectWork, activityStreak]);
+  }, [drafts, activeChallengeId, history, projectWork, bankProjectWork, activityStreak]);
 
   useEffect(() => {
     const url = new URL(window.location.href);
@@ -504,8 +517,9 @@ export default function App() {
     moveTo(0);
   };
 
-  const updateProjectWork = (projectId, update) => {
-    setProjectWork(current => {
+  const updateProjectWork = (projectId, update, bank) => {
+    const setWork = bank ? setBankProjectWork : setProjectWork;
+    setWork(current => {
       const currentProject = current[projectId] || { answers: {}, submittedAnswers: null, submittedAt: null };
       const nextProject = typeof update === "function" ? update(currentProject) : update;
       return { ...current, [projectId]: nextProject };
@@ -572,7 +586,7 @@ export default function App() {
     switch (activeStep) {
       case 0:
         if (workspaceSection === "projects") {
-          return <ProjectsPage profileName={workspace.profileName} projectWork={projectWork}
+          return <ProjectsPage profileName={workspace.profileName} projectWork={projectWork} bankProjectWork={bankProjectWork}
             onProjectWorkChange={updateProjectWork} onValidActivity={recordValidActivity} />;
         }
         if (workspaceSection === "explorer") {

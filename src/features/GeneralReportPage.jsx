@@ -57,7 +57,7 @@ export default function GeneralReportPage({
             <article className={`general-feedback-item ${result.passed ? "matched" : "review"}`} key={result.id}>
               <span className="feedback-icon"><Icon name={result.passed ? "circle-check" : "circle-alert"} /></span>
               <div>
-                <div className="exercise-criterion-heading"><h3>{result.name}</h3><CriterionStatus passed={result.passed} /></div>
+                <div className="exercise-criterion-heading"><h3>{result.name}</h3>{draft.testing.bankMeeting ? <span className={`criterion-status ${result.passed ? "meets" : "review"}`}>{result.status}</span> : <CriterionStatus passed={result.passed} /> }</div>
                 {result.id === "omission" ? (
                   <>
                     <p><strong>Tu observación:</strong> {result.observed || "No se registró una omisión."}</p>
@@ -83,6 +83,10 @@ export default function GeneralReportPage({
         <ul className="recommendation-list">
           {feedback.recommendations.map((item) => <li key={item}><Icon name="lightbulb" size={17} />{item}</li>)}
         </ul>
+        {draft.testing.bankMeeting && <>
+          <p><strong>Versión revisada:</strong> {draft.testing.executiveSummary}</p>
+          <p><strong>Respuesta a Dirección:</strong> {draft.testing.objection}</p>
+        </>}
         <p><strong>Tu justificación:</strong> {draft.testing.rationale || "Sin justificación registrada."}</p>
       </ContentCard>
 

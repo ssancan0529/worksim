@@ -3,6 +3,8 @@ import ActionButton from "../../components/ActionButton";
 import ExperienceCard from "../../components/ExperienceCard";
 import Icon from "../../components/Icon";
 import { AREA_BY_ID, AREAS } from "../../data/areas";
+import { BANK_PROJECTS } from "../../data/bankProjects";
+import ReviewPrompt from "../../components/ReviewPrompt";
 import { PORTFOLIO_SAMPLE, PROJECTS } from "../../data/projects";
 import { evaluateProjectSubmission, getProjectProgress, isNewAcceptedSubmission } from "../../lib/projects";
 import "./projects.css";
@@ -15,11 +17,7 @@ const salesMonths = [
   { label: "Mar", sales: 6100 },
 ];
 const usd = new Intl.NumberFormat("es-EC", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
-const inventoryRoutes = [
-  ["GET", "/productos"],
-  ["POST", "/productos"],
-  ["PATCH", "/productos/{id}/stock"],
-];
+const inventoryRoutes = [["GET", "/movimientos/{id}"], ["POST", "/movimientos"]];
 const campaignPosts = [
   ["Lun", "Anuncio"],
   ["Mié", "Demo"],
@@ -30,7 +28,7 @@ function SalesPreview() {
   const maximum = Math.max(...salesMonths.map(({ sales }) => sales));
   return (
     <div className="project-preview-board">
-      <div className="project-preview-title"><Icon name="clipboard-list" size={15} /> Ventas del trimestre</div>
+      <div className="project-preview-title"><Icon name="clipboard-list" size={15} /> Transacciones liquidadas</div>
       <div className="project-sales-chart">
         {salesMonths.map(({ label, sales }) => (
           <div className="project-sales-column" key={label}>
@@ -51,7 +49,7 @@ function ProjectPreview({ area }) {
       {area === "data" && <SalesPreview />}
       {area === "software" && (
         <div className="project-preview-board project-api-board">
-          <div className="project-preview-title"><Icon name="terminal" size={15} /> Servicio de inventario</div>
+          <div className="project-preview-title"><Icon name="terminal" size={15} /> Registro de movimientos</div>
           <ul>{inventoryRoutes.map(([method, path]) => (
             <li key={method}><strong>{method}</strong><code>{path}</code></li>
           ))}</ul>
@@ -172,7 +170,7 @@ function ProjectValidation({ progress }) {
         ))}
       </ul>
       <p className="project-validation-note">
-        {progress.evaluation.version === 2 ? progress.evaluation.review : "Evaluación histórica por palabras clave. Conserva su resultado original. Vuelve a entregar con la nueva evidencia para aplicar la rúbrica actual."}
+        {progress.evaluation.version >= 2 ? progress.evaluation.review : "Evaluación histórica por palabras clave. Conserva su resultado original. Vuelve a entregar con la nueva evidencia para aplicar la rúbrica actual."}
       </p>
     </section>
   );
@@ -185,6 +183,10 @@ function ProjectDetail({ project, work, onWorkChange, onBack, onValidActivity, h
   const stage = project.stages[stageIndex];
   const drafts = work.answers || {};
   const progress = getProjectProgress(project, work);
+  const review = project.bank && drafts[stageIndex]?.trim()
+    ? evaluateProjectSubmission(project, drafts, work.evidence, work.inventoryRun, work.inventoryCode)
+      .criteria[stageIndex].requirements.find(item => !item.passed)
+    : null;
 
   useEffect(() => {
     if (!focusStage.current) return;
@@ -251,10 +253,13 @@ function ProjectDetail({ project, work, onWorkChange, onBack, onValidActivity, h
               answers: { ...drafts, [stageIndex]: event.target.value },
             })} />
           <p className="project-draft-note">Se guarda automáticamente en este navegador.</p>
+          {project.bank ? (drafts[stageIndex]?.trim() && <ReviewPrompt
+            question={review ? `¿Qué dato o prueba usarías para verificar «${review.label}»?` : stage.hint}
+            hint={review ? (review.hint || stage.hint) : undefined} />) :
           <details className="project-ai" key={stage.title}>
             <summary><Icon name="sparkles" size={17} />Ver ejemplo de apoyo de IA</summary>
             <p>{stage.hint}</p>
-          </details>
+          </details>}
           <ProjectValidation progress={progress} />
           {work.submissions?.length > 0 && <details className="project-reference">
             <summary>Entregas anteriores ({work.submissions.length})</summary>
@@ -320,12 +325,12 @@ function ProjectPortfolio({ profileName, onBack, headingRef }) {
   );
 }
 
-export default function ProjectsPage({ profileName, projectWork, onProjectWorkChange, onValidActivity }) {
+export default function ProjectsPage({ profileName, projectWork, bankProjectWork, onProjectWorkChange, onValidActivity }) {
   const [view, setView] = useState({ kind: "catalog" });
   const [area, setArea] = useState("all");
   const headingRef = useRef(null);
   const focusHeading = useRef(false);
-  const visibleProjects = area === "all" ? PROJECTS : PROJECTS.filter(project => project.area === area);
+  const visibleProjects = area === "all" ? BANK_PROJECTS : BANK_PROJECTS.filter(project => project.area === area);
 
   useEffect(() => {
     if (!focusHeading.current) return;
@@ -368,17 +373,28 @@ export default function ProjectsPage({ profileName, projectWork, onProjectWorkCh
             </div>
             <div className="project-grid">
               {visibleProjects.map(item => (
-                <ProjectCard key={item.id} project={item} progress={getProjectProgress(item, projectWork[item.id])}
+                <ProjectCard key={item.id} project={item} progress={getProjectProgress(item, bankProjectWork[item.id])}
                   onOpen={() => show({ kind: "project", project: item })} />
               ))}
             </div>
           </section>
         </>
       )}
-      {view.kind === "project" && <ProjectDetail key={project.id} project={project}
-        work={projectWork[project.id]} headingRef={headingRef} onBack={backToCatalog}
-        onValidActivity={onValidActivity}
-        onWorkChange={update => onProjectWorkChange(project.id, update)} />}
+      {view.kind === "project" && <>
+        {project.bank && (() => {
+          const legacy = PROJECTS.find(item => item.id === project.id);
+          const progress = getProjectProgress(legacy, projectWork[project.id]);
+          return (progress.inProgress || progress.completed) && (
+            <ActionButton variant="secondary" onClick={() => show({ kind: "project", project: legacy })}>
+              Abrir mi trabajo anterior · {legacy.title}
+            </ActionButton>
+          );
+        })()}
+        <ProjectDetail key={`${project.id}-${Boolean(project.bank)}`} project={project}
+          work={(project.bank ? bankProjectWork : projectWork)[project.id]} headingRef={headingRef}
+          onBack={project.bank ? backToCatalog : () => show({ kind: "project", project: BANK_PROJECTS.find(item => item.id === project.id) })}
+          onValidActivity={onValidActivity} onWorkChange={update => onProjectWorkChange(project.id, update, project.bank)} />
+      </>}
       {view.kind === "portfolio" && <ProjectPortfolio profileName={profileName} onBack={backToCatalog} headingRef={headingRef} />}
     </div>
   );

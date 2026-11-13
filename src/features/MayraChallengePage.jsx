@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import ActionButton from "../components/ActionButton";
+import ReviewPrompt from "../components/ReviewPrompt";
 import ContentCard from "../components/ContentCard";
 import CriterionStatus from "../components/CriterionStatus";
 import ExerciseTable from "../components/ExerciseTable";
@@ -70,7 +71,7 @@ export default function MayraChallengePage({ step, draft, onUpdate, onBack, onFi
   const [comparisonError, setComparisonError] = useState("");
   const [busy, setBusy] = useState("");
   const running = useRef(false);
-  const ready = Boolean(testing.code.trim()) && draft.investigation.reviewed;
+  const ready = Boolean(testing.code.trim()) && testing.ran && testing.auditExecutedCode === testing.code;
   useEffect(() => () => { running.current = false; }, []);
 
   const update = (key, value) => onUpdate(current => ({
@@ -78,23 +79,27 @@ export default function MayraChallengePage({ step, draft, onUpdate, onBack, onFi
   }));
 
   async function execute(compare = false) {
-    if (running.current || !testing.code.trim()) return;
+    if (running.current || (!compare && !testing.code.trim())) return;
     running.current = true;
     setBusy(compare ? "comparison" : "own");
     setError("");
     setComparisonError("");
-    setResult(undefined);
+    if (testing.code.trim()) setResult(undefined);
     onUpdate(current => ({
       ...current, testing: { ...current.testing, results: [], ...(compare ? { ran: false, rows: [] } : {}) },
     }));
     try {
-      try {
+      if (testing.code.trim()) try {
         const [ownResult] = await runMayraSql(testing.code);
         if (!running.current) return;
         setResult(ownResult ?? null);
-        onUpdate(current => ({ ...current, testing: { ...current.testing, results: checkRows(ownResult) } }));
+        onUpdate(current => ({ ...current, testing: { ...current.testing, results: checkRows(ownResult), auditExecutedCode: testing.code, auditError: "" } }));
       } catch (failure) {
-        if (running.current) setError(failure.message);
+        if (running.current) {
+          setError(failure.message);
+          onUpdate(current => ({ ...current, testing: { ...current.testing,
+            auditExecutedCode: testing.code, auditError: failure.message } }));
+        }
       }
       if (compare && running.current) {
         try {
@@ -119,14 +124,15 @@ export default function MayraChallengePage({ step, draft, onUpdate, onBack, onFi
       <ContentCard>
         <h2>Resultado de la IA</h2>
         {testing.ran ? <SqlResult result={{ columns, values: testing.rows }} />
-          : <p>Comparación opcional pendiente de ejecutar.</p>}
+          : <p>Este informe anterior se guardó sin una ejecución de la propuesta.</p>}
         <h3>Filas esperadas</h3>
         <ExerciseTable columns={columns} rows={EXPECTED_ROWS} caption="Transferencias que cumplen el encargo" collapsible />
         <p>La propuesta incluye la fila 102, cuyo estado es Pendiente. Verifica el estado de las transferencias antes de entregar el reporte.</p>
       </ContentCard>
       <ContentCard>
         <h2>Tu evidencia</h2>
-        {!testing.results.length && <p>Consulta registrada. La evaluación del código está pendiente.</p>}
+        {testing.auditError && <StatusNotice variant="warning">{testing.auditError}</StatusNotice>}
+        {!testing.results.length && !testing.auditError && <p>Consulta registrada. La evaluación del código está pendiente.</p>}
         {testing.results.map(check => <p key={check.id}>{check.name} · <CriterionStatus passed={check.passed} /></p>)}
         <p>{options.find(([value]) => value === testing.verdict)?.[1]} · {testing.rationale}</p>
       </ContentCard>
@@ -146,6 +152,21 @@ export default function MayraChallengePage({ step, draft, onUpdate, onBack, onFi
         <p>Lista las transferencias confirmadas de Guayaquil de $100 o más. Devuelve las columnas de la muestra y ordena por ID ascendente.</p>
         <ExerciseTable columns={columns} rows={TRANSACTIONS} caption="Tabla transacciones" collapsible />
       </ContentCard>
+      <ContentCard className="exercise-comparison">
+        <h2>Audita la consulta propuesta</h2>
+        <p>Ejemplo preparado para decidir si el reporte puede enviarse a Operaciones.</p>
+        <pre className="code-block"><code>{AI_QUERY}</code></pre>
+        <ActionButton variant="secondary" icon="play" disabled={Boolean(busy)} onClick={() => execute(true)}>
+          {busy === "comparison" ? "Ejecutando…" : "Comprobar propuesta en SQLite"}
+        </ActionButton>
+        {(testing.ran || comparisonError) && <>
+          <h3>Resultado de la propuesta</h3>
+          <SqlResult result={{ columns, values: testing.rows }} error={comparisonError} />
+          {testing.rows.some(row => row[3] !== "Confirmada") &&
+            <ReviewPrompt question="¿Qué estado exige el encargo y qué fila contradice esa condición?"
+              hint="Contrasta la columna estado con los filtros de la consulta." />}
+        </>}
+      </ContentCard>
       <div className="exercise-code-results">
         <ContentCard>
           <ExerciseEditor id="mayra-sql-editor" label="Tu consulta SQL" file="consulta.sql" value={testing.code}
@@ -154,7 +175,7 @@ export default function MayraChallengePage({ step, draft, onUpdate, onBack, onFi
               setResult(undefined);
               setError("");
               setComparisonError("");
-              onUpdate(current => ({ ...current, testing: { ...current.testing, code, ran: false, results: [], rows: [], verdict: "", rationale: "" } }));
+              onUpdate(current => ({ ...current, testing: { ...current.testing, code, auditExecutedCode: "", auditError: "", results: [], verdict: "", rationale: "" } }));
             }} />
           <p className="field-hint">Escribe lo que sepas para continuar. Tu consulta puede estar incompleta o tener errores.</p>
           <div className="exercise-editor-actions">
@@ -166,22 +187,10 @@ export default function MayraChallengePage({ step, draft, onUpdate, onBack, onFi
         </ContentCard>
         <ContentCard>
           <h2>Resultado de tu código</h2>
-          <div aria-live="polite" aria-busy={Boolean(busy)}><SqlResult result={result} error={error} /></div>
+          <div aria-live="polite" aria-busy={Boolean(busy)}><SqlResult result={result} error={error || testing.auditError} /></div>
         </ContentCard>
       </div>
-      <ContentCard className="exercise-comparison">
-        <h2>Compara con la IA</h2>
-        {draft.investigation.reviewed ? <>
-          <pre className="code-block"><code>{AI_QUERY}</code></pre>
-          <ActionButton variant="secondary" icon="play" disabled={Boolean(busy) || !testing.code.trim()} onClick={() => execute(true)}>Ejecutar ambas consultas</ActionButton>
-          {(testing.ran || comparisonError) && <><h3>Resultado de la IA</h3><SqlResult result={{ columns, values: testing.rows }} error={comparisonError} /></>}
-        </> : <>
-          <p>Escribe un intento para ver la propuesta. Puedes ejecutar las consultas cuando quieras comprobarlas.</p>
-          <ActionButton variant="secondary" disabled={!testing.code.trim() || Boolean(busy)}
-            onClick={() => onUpdate(current => ({ ...current, investigation: { ...current.investigation, reviewed: true } }))}>Ver propuesta de la IA</ActionButton>
-        </>}
-      </ContentCard>
-      <ExerciseDecision testing={testing} options={options} onChange={update} onFinish={onFinish} onBack={onBack} ready={ready && !busy} />
+      <ExerciseDecision testing={testing} options={options} rationaleLabel="Cita una fila, explica qué requisito incumple y qué cambiarías antes de enviar el reporte" onChange={update} onFinish={onFinish} onBack={onBack} ready={ready && !busy} />
     </>
   );
 }

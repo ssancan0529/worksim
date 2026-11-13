@@ -1,3 +1,4 @@
+import { BANK_PROJECTS, MOVEMENT_CASES } from "../data/bankProjects.js";
 import { PROJECTS } from "../data/projects.js";
 import { PROJECT_RUBRICS, RUBRIC_VERSION, INVENTORY_CASES } from "../data/projectRubrics.js";
 
@@ -24,33 +25,44 @@ function normalizeAnswers(value, stageCount) {
   );
 }
 
+function normalizeProjectVersion(project, value) {
+  const projectState = isRecord(value) ? value : {};
+  const answers = normalizeAnswers(projectState.answers, project.stages.length);
+  const submittedAt = typeof projectState.submittedAt === "string" ? projectState.submittedAt : null;
+  const submittedAnswers = submittedAt
+    ? normalizeAnswers(projectState.submittedAnswers, project.stages.length)
+    : null;
+  const evaluation = submittedAnswers
+    ? isRecord(projectState.evaluation) && Array.isArray(projectState.evaluation.criteria)
+      ? projectState.evaluation
+      : { ...evaluateLegacySubmission(project, submittedAnswers), version: 1 }
+    : null;
+  return {
+    answers,
+    submittedAnswers,
+    submittedAt,
+    evaluation,
+    evidence: normalizeEvidence(project, projectState.evidence),
+    submittedEvidence: normalizeEvidence(project, projectState.submittedEvidence),
+    inventoryCode: typeof projectState.inventoryCode === "string" ? projectState.inventoryCode : "",
+    submittedInventoryCode: typeof projectState.submittedInventoryCode === "string" ? projectState.submittedInventoryCode : "",
+    inventoryRun: isRecord(projectState.inventoryRun) ? projectState.inventoryRun : null,
+    submissions: Array.isArray(projectState.submissions) ? projectState.submissions.filter(isRecord) : [],
+  };
+}
+
 export function normalizeProjectWork(value) {
   const saved = isRecord(value) ? value : {};
-  return Object.fromEntries(PROJECTS.map((project) => {
-    const projectState = isRecord(saved[project.id]) ? saved[project.id] : {};
-    const answers = normalizeAnswers(projectState.answers, project.stages.length);
-    const submittedAt = typeof projectState.submittedAt === "string" ? projectState.submittedAt : null;
-    const submittedAnswers = submittedAt
-      ? normalizeAnswers(projectState.submittedAnswers, project.stages.length)
-      : null;
-    const evaluation = submittedAnswers
-      ? isRecord(projectState.evaluation) && Array.isArray(projectState.evaluation.criteria)
-        ? projectState.evaluation
-        : { ...evaluateLegacySubmission(project, submittedAnswers), version: 1 }
-      : null;
-    return [project.id, {
-      answers,
-      submittedAnswers,
-      submittedAt,
-      evaluation,
-      evidence: normalizeEvidence(project, projectState.evidence),
-      submittedEvidence: normalizeEvidence(project, projectState.submittedEvidence),
-      inventoryCode: typeof projectState.inventoryCode === "string" ? projectState.inventoryCode : "",
-      submittedInventoryCode: typeof projectState.submittedInventoryCode === "string" ? projectState.submittedInventoryCode : "",
-      inventoryRun: isRecord(projectState.inventoryRun) ? projectState.inventoryRun : null,
-      submissions: Array.isArray(projectState.submissions) ? projectState.submissions.filter(isRecord) : [],
-    }];
-  }));
+  return Object.fromEntries(PROJECTS.map(project => [
+    project.id, normalizeProjectVersion(project, saved[project.id]),
+  ]));
+}
+
+export function normalizeBankProjectWork(value) {
+  const saved = isRecord(value) ? value : {};
+  return Object.fromEntries(BANK_PROJECTS.map(project => [
+    project.id, normalizeProjectVersion(project, saved[project.id]),
+  ]));
 }
 
 function evaluateLegacySubmission(project, answers) {
@@ -113,13 +125,17 @@ export function getProjectProgress(project, projectState = {}) {
 }
 
 export const EVALUATION_LABELS = {
-  correct: "Completo y correcto", partial: "Parcialmente correcto",
-  incorrect: "Incorrecto", insufficient: "Insuficiente o sin evidencia",
+  correct: "Cumple", partial: "Parcial",
+  incorrect: "No cumple", insufficient: "Por revisar",
 };
+
+export function getProjectRubric(project) {
+  return project.rubric || PROJECT_RUBRICS[project.id];
+}
 
 export function normalizeEvidence(project, value) {
   const saved = isRecord(value) ? value : {};
-  return Object.fromEntries(PROJECT_RUBRICS[project.id].stages.flat().map(field => [
+  return Object.fromEntries(getProjectRubric(project).stages.flat().map(field => [
     field.id, typeof saved[field.id] === "string" || typeof saved[field.id] === "number" ? saved[field.id] : "",
   ]));
 }
@@ -147,7 +163,7 @@ function checkField(field, evidence) {
       } else passed = Math.abs(actual - field.expected) <= field.tolerance;
     }
   }
-  return { label: field.label, passed, status: missing ? "insufficient" : passed ? "correct" : "incorrect",
+  return { label: field.label, hint: field.help, passed, status: missing ? "insufficient" : passed ? "correct" : "incorrect",
     feedback: missing ? `Falta esta evidencia. ${field.help}` : passed ? "La evidencia coincide con las condiciones del encargo." : `Revisa tu respuesta. ${field.help}` };
 }
 
@@ -159,20 +175,23 @@ function classify(requirements) {
 }
 
 export function evaluateProjectSubmission(project, answers, evidence = {}, inventoryRun = null, inventoryCode = "") {
-  const rubric = PROJECT_RUBRICS[project.id];
+  const rubric = getProjectRubric(project);
   const normalized = normalizeAnswers(answers, project.stages.length);
   const criteria = project.criteria.map((criterion, stageIndex) => {
     let requirements = rubric.stages[stageIndex].map(field => checkField(field, evidence));
     if (project.id === "api-de-inventario" && stageIndex === 1) {
       const current = inventoryCode.trim() && inventoryRun?.code === inventoryCode;
-      requirements = INVENTORY_CASES.map((sample, index) => {
+      requirements = (project.bank ? MOVEMENT_CASES : INVENTORY_CASES).map((sample, index) => {
         const actual = current ? inventoryRun.results?.[index] : null;
-        const passed = Boolean(actual && !actual.error && actual.result?.aceptado === sample.expected.aceptado
-          && actual.result?.stock === sample.expected.stock);
+        const passed = Boolean(actual && !actual.error && (project.bank
+          ? actual.result?.accepted === sample.expected.accepted
+            && actual.result?.ledger?.length === sample.expected.ledger.length
+            && sample.expected.ledger.every((row, i) => Object.keys(row).every(key => actual.result.ledger[i]?.[key] === row[key]))
+          : actual.result?.aceptado === sample.expected.aceptado && actual.result?.stock === sample.expected.stock));
         return { label: sample.name, passed, status: !actual ? "insufficient" : passed ? "correct" : "incorrect",
           feedback: !actual ? "Ejecuta las pruebas de la función actual para obtener evidencia."
             : passed ? "El resultado coincide con el contrato."
-            : `Entrada ${JSON.stringify({stock: sample.stock, cantidad: sample.cantidad, operacion: sample.operacion})}. Esperado ${JSON.stringify(sample.expected)}. Obtenido ${actual.error || JSON.stringify(actual.result)}.` };
+            : `Entrada ${JSON.stringify(project.bank ? { ledger: sample.ledger, id: sample.id, cents: sample.cents, kind: sample.kind } : { stock: sample.stock, cantidad: sample.cantidad, operacion: sample.operacion })}. Esperado ${JSON.stringify(sample.expected)}. Obtenido ${actual.error || JSON.stringify(actual.result)}.` };
       });
     }
     const status = classify(requirements);
@@ -182,7 +201,7 @@ export function evaluateProjectSubmission(project, answers, evidence = {}, inven
       hasExplanation: Boolean(normalized[stageIndex].trim()),
     };
   });
-  return { version: RUBRIC_VERSION, criteria, status: classify(criteria.map(item => ({...item, status: item.status}))),
+  return { version: project.bank ? 3 : RUBRIC_VERSION, criteria, status: classify(criteria.map(item => ({...item, status: item.status}))),
     passed: criteria.every(item => item.passed && item.hasExplanation),
     requiresReview: true, review: rubric.review };
 }

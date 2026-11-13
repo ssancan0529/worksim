@@ -7,7 +7,7 @@ import {
   STORAGE_KEY,
 } from "../data/scenario.js";
 import { normalizePracticeDraft } from "../practica/state.mjs";
-import { normalizeProjectWork } from "./projects.js";
+import { normalizeBankProjectWork, normalizeProjectWork } from "./projects.js";
 import { normalizeActivityStreak } from "./activityStreak.js";
 
 function isRecord(value) {
@@ -32,6 +32,7 @@ export function normalizeDraft(value) {
         claimId: text(item.claimId),
         classification: text(item.classification),
         evidence: text(item.evidence),
+        ...(testing.bankMeeting ? { sourceId: text(item.sourceId) } : {}),
       }))
     : [];
   const observationById = new Map(savedObservations.map((item) => [item.claimId, item]));
@@ -58,7 +59,9 @@ export function normalizeDraft(value) {
       ran: testing.ran === true,
       executedCode: typeof testing.executedCode === "string" ? testing.executedCode : null,
       ...(kind === "technical" && testing.petsReviewVersion === 1 ? { petsReviewVersion: 1 } : {}),
-      parameters: isRecord(testing.parameters) ? Object.fromEntries(["species", "city", "limit", "offset"].map(key => [key, text(testing.parameters[key])])) : undefined,
+      bankOperations: testing.bankOperations === true,
+      plan: text(testing.plan),
+      parameters: isRecord(testing.parameters) ? Object.fromEntries([...(testing.bankOperations ? ["kind", "status"] : ["species", "city"]), "limit", "offset"].map(key => [key, text(testing.parameters[key])])) : undefined,
       results: Array.isArray(testing.results) ? testing.results : [],
       verdict: text(testing.verdict),
       rationale: text(testing.rationale),
@@ -71,7 +74,13 @@ export function normalizeDraft(value) {
         })
         : savedObservations,
       omission: text(testing.omission),
+      bankMeeting: testing.bankMeeting === true,
+      omittedSources: Array.isArray(testing.omittedSources) ? testing.omittedSources.filter(id => Number.isInteger(id) && id >= 1 && id <= 5) : [],
+      executiveSummary: text(testing.executiveSummary),
+      objection: text(testing.objection),
       ...(kind === "sql" ? {
+        auditExecutedCode: text(testing.auditExecutedCode),
+        auditError: text(testing.auditError),
         rows: Array.isArray(testing.rows)
           ? testing.rows.filter((row) => Array.isArray(row) && row.length === 5
             && Number.isInteger(row[0]) && row.slice(1, 4).every((cell) => typeof cell === "string")
@@ -101,6 +110,7 @@ export function loadWorksimState() {
         activeChallengeId: CHALLENGE.id,
         history: [],
         projectWork: normalizeProjectWork(),
+        bankProjectWork: normalizeBankProjectWork(),
         activityStreak: normalizeActivityStreak(),
         error: "",
       };
@@ -122,6 +132,7 @@ export function loadWorksimState() {
         : CHALLENGE.id,
       history: Array.isArray(parsed.history) ? parsed.history.filter(isRecord) : [],
       projectWork: normalizeProjectWork(parsed.projectWork),
+      bankProjectWork: normalizeBankProjectWork(parsed.bankProjectWork),
       activityStreak: normalizeActivityStreak(parsed.activityStreak),
       error: "",
     };
@@ -134,6 +145,7 @@ export function loadWorksimState() {
       activeChallengeId: CHALLENGE.id,
       history: [],
       projectWork: normalizeProjectWork(),
+      bankProjectWork: normalizeBankProjectWork(),
       activityStreak: normalizeActivityStreak(),
       error: "No se pudieron recuperar los datos guardados; inicia una nueva práctica.",
     };

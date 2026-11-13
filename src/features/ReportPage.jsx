@@ -73,7 +73,7 @@ export default function ReportPage({
           {feedback.recommendations.map((item) => <li key={item}><Icon name="lightbulb" size={17} />{item}</li>)}
         </ul>
         <p className="small-note">{realReview
-          ? "Los casos ejecutan la función con mascotas ficticias en SQLite."
+          ? "Los casos ejecutan la función con datos ficticios en SQLite."
           : "Este informe anterior conserva la revisión por patrones de texto."}</p>
       </ContentCard>
 
@@ -111,7 +111,7 @@ export default function ReportPage({
       <details className="content-card trace-card">
         <summary><Icon name="history" /> Revisar simulación paso a paso</summary>
         <div className="trace-content">
-          <p><strong>Análisis inicial:</strong> {draft.analysis.approach || "Sin respuesta."}</p>
+          <p><strong>Análisis inicial:</strong> {draft.testing.plan || draft.analysis.approach || "Sin respuesta."}</p>
           <p><strong>Riesgos previstos:</strong> {draft.analysis.risks || "Sin respuesta."}</p>
           <p><strong>Hipótesis investigadas:</strong> {feedback.selectedHypotheses.length ? feedback.selectedHypotheses.map((item) => item.text).join("; ") : "Ninguna marcada."}</p>
           <p><strong>Notas de investigación:</strong> {draft.investigation.notes || "Sin notas."}</p>

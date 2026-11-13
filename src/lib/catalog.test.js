@@ -33,7 +33,7 @@ test("category search matches roles, skills and accents", () => {
 test("challenge search finds available experience by skill or profession", () => {
   assert.deepEqual(filterChallenges(AVAILABLE_CHALLENGES, noFilters, "Python").map(({ id }) => id),
     ["practica-sql-python", "eng-842"]);
-  assert.deepEqual(filterChallenges(AVAILABLE_CHALLENGES, { ...noFilters, difficulty: "Básico" }, "junior")
+  assert.deepEqual(filterChallenges(AVAILABLE_CHALLENGES, { ...noFilters, difficulty: "Intermedio" }, "analista de datos junior")
     .map(({ id }) => id), ["practica-sql-python"]);
   assert.equal(filterChallenges(AVAILABLE_CHALLENGES, noFilters, "backend junior").length, 1);
   assert.equal(filterChallenges(AVAILABLE_CHALLENGES, noFilters, "diseño UX").length, 0);
@@ -42,7 +42,7 @@ test("challenge search finds available experience by skill or profession", () =>
 test("the introductory challenge is available to critical-thinking beginners", () => {
   const filters = {
     area: "communication",
-    difficulty: "Principiante",
+    difficulty: "Intermedio",
     duration: "medium",
     competency: "Pensamiento crítico",
   };
