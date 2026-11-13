@@ -16,7 +16,7 @@ const options = [
   ["reject", "Rechazar"], ["clarify", "Pedir una aclaración"],
 ];
 
-export default function TestingPage({ testing, onChange, onRun, onBack, onContinue }) {
+export default function TestingPage({ testing, onChange, onRun, onContinue }) {
   const [revealed, setRevealed] = useState(false);
   const [busy, setBusy] = useState(false);
   const bank = testing.bankOperations === true;
@@ -65,7 +65,7 @@ export default function TestingPage({ testing, onChange, onRun, onBack, onContin
           : ["empty", "zero"].includes(pending?.id) ? "Distingue una lista vacía de un error de ejecución."
           : "Revisa el orden global y el desempate antes de seleccionar la página."} />}
       <ExerciseDecision rationaleLabel={bank ? "Cita una prueba, explica qué cambiaste y justifica tu recomendación" : undefined} testing={testing} options={options} onChange={onChange}
-        onFinish={onContinue} onBack={onBack} ready={ready && !busy && (!bank || Boolean(testing.plan?.trim()))} />
+        onFinish={onContinue} ready={ready && !busy && (!bank || Boolean(testing.plan?.trim()))} />
     </>
   );
 }

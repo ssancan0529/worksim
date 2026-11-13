@@ -85,7 +85,7 @@ function PracticeStepNavigation({ step, draft, onNavigate }) {
   );
 }
 
-function PracticeStart({ draft, onUpdate, onExit, onNext }) {
+function PracticeStart({ draft, onUpdate, onNext }) {
   return (
     <div className="practice-form">
       <PageIntro eyebrow="PRÁCTICA GUIADA · NIVEL JUNIOR" title={PRACTICE_CHALLENGE.title}
@@ -101,7 +101,6 @@ function PracticeStart({ draft, onUpdate, onExit, onNext }) {
       </ContentCard>
       <PreviousPractice />
       <PageActions>
-        <ActionButton variant="secondary" icon="arrow-left" iconPosition="left" onClick={onExit}>Volver al explorador</ActionButton>
         <ActionButton icon="arrow-right" onClick={onNext} disabled={!confidenceIsValid(draft.before)}>Empezar</ActionButton>
       </PageActions>
     </div>
@@ -368,7 +367,7 @@ function PracticeExercise({ exercise, draft, onUpdate, onBack, onNext, nextLabel
   );
 }
 
-function PracticeClose({ draft, onUpdate, onExit, onComplete, onBack, onExport, onCopy }) {
+function PracticeClose({ draft, onUpdate, onComplete, onBack, onExport, onCopy }) {
   const complete = Boolean(draft.completedAt);
   const ready = canCompletePractice(draft);
   const audit = scoreDetection(draft.attempts.withdrawal.lines);
@@ -408,18 +407,15 @@ function PracticeClose({ draft, onUpdate, onExit, onComplete, onBack, onExport, 
       </ContentCard>
       <PageActions>
         <ActionButton variant="secondary" icon="arrow-left" iconPosition="left" onClick={onBack}>Volver a Retiros</ActionButton>
-        <ActionButton variant="secondary" onClick={onExit}>Salir sin finalizar</ActionButton>
-        <ActionButton icon="check" disabled={!ready} onClick={onComplete}>
-          {complete ? "Volver al explorador" : "Finalizar práctica"}
-        </ActionButton>
+        {!complete && <ActionButton icon="check" disabled={!ready} onClick={onComplete}>Finalizar práctica</ActionButton>}
       </PageActions>
-      {!ready && <p className="validation-hint">Responde la pregunta de seguridad si quieres finalizar. También puedes salir y continuar después.</p>}
+      {!ready && <p className="validation-hint">Responde la pregunta de seguridad para finalizar.</p>}
     </div>
   );
 }
 
 export default function PracticeChallengePage(props) {
-  const { step, draft, onBack, onNext, onExit, onNavigate } = props;
+  const { step, draft, onBack, onNext, onNavigate } = props;
   return (
     <>
       <PracticeStepNavigation step={step} draft={draft} onNavigate={onNavigate} />

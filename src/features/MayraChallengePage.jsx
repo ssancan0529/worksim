@@ -64,7 +64,7 @@ function SqlResult({ result, error }) {
   );
 }
 
-export default function MayraChallengePage({ step, draft, onUpdate, onBack, onFinish, onHome, onExport }) {
+export default function MayraChallengePage({ step, draft, onUpdate, onFinish, onExport }) {
   const { testing } = draft;
   const [result, setResult] = useState(undefined);
   const [error, setError] = useState("");
@@ -138,7 +138,6 @@ export default function MayraChallengePage({ step, draft, onUpdate, onBack, onFi
       </ContentCard>
       <PageActions>
         <ActionButton variant="secondary" onClick={onExport}>Descargar evidencia</ActionButton>
-        <ActionButton onClick={onHome}>Volver a desafíos</ActionButton>
       </PageActions>
     </div>
   );
@@ -191,7 +190,7 @@ export default function MayraChallengePage({ step, draft, onUpdate, onBack, onFi
           <div aria-live="polite" aria-busy={Boolean(busy)}><SqlResult result={result} error={error || testing.auditError} /></div>
         </ContentCard>
       </div>
-      <ExerciseDecision testing={testing} options={options} rationaleLabel="Cita una fila, explica qué requisito incumple y qué cambiarías antes de enviar el reporte" onChange={update} onFinish={onFinish} onBack={onBack} ready={ready && !busy} />
+      <ExerciseDecision testing={testing} options={options} rationaleLabel="Cita una fila, explica qué requisito incumple y qué cambiarías antes de enviar el reporte" onChange={update} onFinish={onFinish} ready={ready && !busy} />
     </>
   );
 }

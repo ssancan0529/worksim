@@ -23,7 +23,6 @@ export default function GeneralReportPage({
   onReflectionChange,
   onBack,
   onRestart,
-  onHome,
   onCopy,
   onExport,
 }) {
@@ -138,7 +137,6 @@ export default function GeneralReportPage({
         {onBack && <ActionButton variant="secondary" onClick={onBack} icon="arrow-left" iconPosition="left">Volver al ejercicio</ActionButton>}
         <ActionButton variant="secondary" onClick={onCopy} icon="copy">Copiar resumen</ActionButton>
         <ActionButton variant="secondary" onClick={onExport} icon="download">Descargar evidencia JSON</ActionButton>
-        <ActionButton variant="secondary" onClick={onHome}>Volver a desafíos</ActionButton>
         {draft.completedAt && <ActionButton onClick={onRestart} icon="reset">Practicar nuevamente</ActionButton>}
       </PageActions>
     </>

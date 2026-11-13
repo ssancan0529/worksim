@@ -1,10 +1,12 @@
 import { getChallengeProgress, latestCompletedRecord } from "./lib/challengeProgress";
 import { canCompleteChallenge } from "./lib/completion";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MAYRA_CHALLENGE } from "./data/mayra";
 import MayraChallengePage from "./features/MayraChallengePage";
 import AppHeader from "./components/AppHeader";
+import ChallengeStartDialog from "./components/ChallengeStartDialog";
 import ExitChallengeDialog from "./components/ExitChallengeDialog";
+import VoluntaryExitDialog from "./components/VoluntaryExitDialog";
 import StatusNotice from "./components/StatusNotice";
 import {
   CHALLENGE,
@@ -30,6 +32,7 @@ import { PROJECTS } from "./data/projects";
 import { getProjectProgress } from "./lib/projects";
 import { exercises, PRACTICE_CHALLENGE, PRACTICE_CLOSING_STEP, PRACTICE_STEPS, scoreDetection } from "./practica/cases.mjs";
 import { attemptResultLabel, canCompletePractice, createPracticeDraft, getPracticeStep, practiceTotals } from "./practica/state.mjs";
+import { clearChallengeViolation, markChallengeViolation, readChallengeViolation } from "./lib/challengePolicy";
 
 const THEME_STORAGE_KEY = "worksim-theme";
 const workspace = getWorkspace("individual");
@@ -103,15 +106,21 @@ function createHistoryRecord(challenge, draft) {
 
 function initializeWorksim() {
   const state = loadWorksimState();
+  const violation = readChallengeViolation();
+  if ([CHALLENGE.id, GENERAL_CHALLENGE.id, MAYRA_CHALLENGE.id, PRACTICE_CHALLENGE.id].includes(violation?.challengeId)) {
+    return {
+      ...state,
+      drafts: { ...state.drafts, [violation.challengeId]: createDraftForChallenge(violation.challengeId) },
+      activeChallengeId: violation.challengeId,
+      activeStep: 0,
+      violationDeadline: violation.deadline,
+    };
+  }
   const openPractice = new URLSearchParams(window.location.search).get("desafio") === PRACTICE_CHALLENGE.id;
-  if (!openPractice) return { ...state, activeStep: 0 };
-  const draft = state.drafts[PRACTICE_CHALLENGE.id]?.started
-    ? state.drafts[PRACTICE_CHALLENGE.id] : createPracticeDraft(true);
   return {
     ...state,
-    drafts: { ...state.drafts, [PRACTICE_CHALLENGE.id]: draft },
-    activeChallengeId: PRACTICE_CHALLENGE.id,
-    activeStep: getPracticeStep(draft),
+    activeStep: 0,
+    requestedChallengeId: openPractice ? PRACTICE_CHALLENGE.id : null,
   };
 }
 
@@ -124,6 +133,10 @@ export default function App() {
   const [projectWork, setProjectWork] = useState(initialState.projectWork);
   const [bankProjectWork, setBankProjectWork] = useState(initialState.bankProjectWork);
   const [activityStreak, setActivityStreak] = useState(initialState.activityStreak);
+  const [startConsentChallengeId, setStartConsentChallengeId] = useState(initialState.requestedChallengeId);
+  const [violationDeadline, setViolationDeadline] = useState(initialState.violationDeadline ?? null);
+  const violationDeadlineRef = useRef(violationDeadline);
+  const [voluntaryExitOpen, setVoluntaryExitOpen] = useState(false);
   const [workspaceSection, setWorkspaceSection] = useState(() => (
     initialState.activeStep === 0 && new URLSearchParams(window.location.search).get("seccion") === "proyectos"
       ? "projects"
@@ -139,7 +152,6 @@ export default function App() {
   const [notice, setNotice] = useState(
     initialState.error ? { message: initialState.error, variant: "warning" } : null,
   );
-  const [exitConfirmationOpen, setExitConfirmationOpen] = useState(false);
   const projectProgress = Object.fromEntries(
     BANK_PROJECTS.map(project => {
       const current = getProjectProgress(project, bankProjectWork[project.id]);
@@ -156,6 +168,7 @@ export default function App() {
   const isPractice = activeChallengeId === PRACTICE_CHALLENGE.id;
   const steps = stepsForChallenge(activeChallengeId);
   const draft = reportRecord?.draft || drafts[activeChallengeId] || createDraftForChallenge(activeChallengeId);
+  const challengeIsActive = activeStep > 0 && !draft.completedAt;
   const maxUnlockedStep = isPractice ? getPracticeStep(draft) : draft.completedAt ? 2 : 1;
 
   const setDraft = (update) => {
@@ -172,6 +185,51 @@ export default function App() {
     moveTo(0);
   };
 
+  const triggerChallengeViolation = (challengeId = activeChallengeId) => {
+    if (violationDeadlineRef.current !== null) return;
+    const deadline = Date.now() + 8_000;
+    violationDeadlineRef.current = deadline;
+    setViolationDeadline(deadline);
+    setVoluntaryExitOpen(false);
+    setStartConsentChallengeId(null);
+    const saved = markChallengeViolation(challengeId, deadline);
+    if (!saved) {
+      setNotice({
+        message: "No se pudo guardar la sanción en este navegador; no cierres esta página hasta que termine el proceso.",
+        variant: "error",
+      });
+    }
+  };
+
+  const requestChallengeStart = (challengeId = CHALLENGE.id) => {
+    setStartConsentChallengeId(challengeId);
+  };
+
+  const cancelChallengeStart = () => {
+    setStartConsentChallengeId(null);
+  };
+
+  const beginChallenge = (challengeId = CHALLENGE.id) => {
+    setStartConsentChallengeId(null);
+    setReportRecord(null);
+    const selectedDraft = drafts[challengeId] || createDraftForChallenge(challengeId);
+    setActiveChallengeId(challengeId);
+    if (selectedDraft.started && !selectedDraft.completedAt) {
+      if (challengeId === PRACTICE_CHALLENGE.id) {
+        moveTo(getPracticeStep(selectedDraft));
+        return;
+      }
+      moveTo(1);
+      return;
+    }
+    setDrafts((current) => ({
+      ...current,
+      [challengeId]: challengeId === PRACTICE_CHALLENGE.id
+        ? createPracticeDraft(true) : { ...createDraftForChallenge(challengeId), started: true },
+    }));
+    moveTo(1);
+  };
+
   useEffect(() => {
     try {
       saveWorksimState({ drafts, activeChallengeId, history, projectWork, bankProjectWork, activityStreak });
@@ -184,9 +242,26 @@ export default function App() {
   }, [drafts, activeChallengeId, history, projectWork, bankProjectWork, activityStreak]);
 
   useEffect(() => {
+    if (!challengeIsActive) return undefined;
+    const handleViolation = () => triggerChallengeViolation(activeChallengeId);
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") handleViolation();
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("blur", handleViolation);
+    window.addEventListener("pagehide", handleViolation);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("blur", handleViolation);
+      window.removeEventListener("pagehide", handleViolation);
+    };
+  }, [challengeIsActive, activeChallengeId]);
+
+  useEffect(() => {
     const url = new URL(window.location.href);
     const practiceInUrl = url.searchParams.get("desafio") === PRACTICE_CHALLENGE.id;
     const showingPractice = isPractice && activeStep > 0;
+    if (startConsentChallengeId === PRACTICE_CHALLENGE.id && practiceInUrl) return;
     const projectsInUrl = url.searchParams.get("seccion") === "proyectos";
     const showingProjects = activeStep === 0 && workspaceSection === "projects";
     if (showingPractice === practiceInUrl && showingProjects === projectsInUrl) return;
@@ -203,7 +278,7 @@ export default function App() {
       else url.searchParams.delete("seccion");
     }
     window.history.replaceState(window.history.state, "", url);
-  }, [isPractice, activeStep, workspaceSection]);
+  }, [isPractice, activeStep, workspaceSection, startConsentChallengeId]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -268,26 +343,6 @@ export default function App() {
       return;
     }
     moveTo(step);
-  };
-
-  const startChallenge = (challengeId = CHALLENGE.id) => {
-    setReportRecord(null);
-    const selectedDraft = drafts[challengeId] || createDraftForChallenge(challengeId);
-    setActiveChallengeId(challengeId);
-    if (selectedDraft.started && !selectedDraft.completedAt) {
-      if (challengeId === PRACTICE_CHALLENGE.id) {
-        moveTo(getPracticeStep(selectedDraft));
-        return;
-      }
-      moveTo(1);
-      return;
-    }
-    setDrafts((current) => ({
-      ...current,
-      [challengeId]: challengeId === PRACTICE_CHALLENGE.id
-        ? createPracticeDraft(true) : { ...createDraftForChallenge(challengeId), started: true },
-    }));
-    moveTo(1);
   };
 
   const updateTesting = (key, value) => {
@@ -484,21 +539,47 @@ export default function App() {
   };
 
   const returnToChallenges = () => {
+    if (challengeIsActive) {
+      triggerChallengeViolation(activeChallengeId);
+      return;
+    }
     setReportRecord(null);
     setWorkspaceSection("explorer");
     moveTo(0);
   };
 
-  const requestChallengeExit = () => setExitConfirmationOpen(true);
+  const requestVoluntaryExit = () => setVoluntaryExitOpen(true);
+
+  const cancelVoluntaryExit = () => setVoluntaryExitOpen(false);
 
   const confirmChallengeExit = () => {
-    setDrafts(current => ({
-      ...current,
+    const clearedDrafts = {
+      ...drafts,
       [activeChallengeId]: createDraftForChallenge(activeChallengeId),
-    }));
-    setExitConfirmationOpen(false);
+    };
+    setDrafts(clearedDrafts);
+    violationDeadlineRef.current = null;
+    setViolationDeadline(null);
+    setVoluntaryExitOpen(false);
+    setReportRecord(null);
     setWorkspaceSection("explorer");
     moveTo(0);
+    let stateSaved = true;
+    try {
+      saveWorksimState({ drafts: clearedDrafts, activeChallengeId, history, projectWork, bankProjectWork, activityStreak });
+    } catch {
+      stateSaved = false;
+      setNotice({
+        message: "No se pudo guardar la eliminación del progreso. Se conservará la sanción para el próximo inicio.",
+        variant: "error",
+      });
+    }
+    if (stateSaved && !clearChallengeViolation()) {
+      setNotice({
+        message: "El progreso se eliminó, pero el navegador no pudo limpiar el registro de la sanción.",
+        variant: "warning",
+      });
+    }
   };
 
   const updateProjectWork = (projectId, update, bank) => {
@@ -551,7 +632,6 @@ export default function App() {
         onNext={() => moveTo(activeStep + 1)}
         onBack={reportRecord ? returnToChallenges : () => moveTo(activeStep - 1)}
         onNavigate={navigate}
-        onExit={returnToChallenges}
         onComplete={finishPractice}
         onExport={exportEvidence}
         onCopy={copySummary}
@@ -562,9 +642,7 @@ export default function App() {
         step={activeStep}
         draft={draft}
         onUpdate={setDraft}
-        onBack={() => moveTo(0)}
         onFinish={finishChallenge}
-        onHome={returnToChallenges}
         onExport={exportEvidence}
       />;
     }
@@ -584,7 +662,7 @@ export default function App() {
                 && history[0]?.completedAt === draft.completedAt
                 && (!history[0]?.challengeId || history[0].challengeId === activeChallengeId),
               )}
-              onStart={startChallenge}
+              onStart={requestChallengeStart}
               onOpenReport={openReport}
             />
           );
@@ -605,14 +683,14 @@ export default function App() {
           ? <GeneralVerificationPage draft={draft} onUpdate={setDraft}
               onObservationChange={updateGeneralObservation} onOmissionChange={updateGeneralOmission}
               onDecisionChange={updateTesting}
-              onBack={() => moveTo(0)} onFinish={finishChallenge} />
+              onFinish={finishChallenge} />
           : <TestingPage testing={draft.testing} onChange={updateTesting} onRun={savePetsReview}
-              onBack={() => moveTo(0)} onContinue={finishChallenge} />;
+              onContinue={finishChallenge} />;
       case 2: {
         const Report = isGeneral ? GeneralReportPage : ReportPage;
         return <Report draft={draft} history={history} onReflectionChange={updateReflection}
-          onBack={reportRecord ? undefined : () => moveTo(1)} onHome={returnToChallenges}
-          onRestart={() => startChallenge(activeChallengeId)} onCopy={copySummary} onExport={exportEvidence} />;
+          onBack={reportRecord ? undefined : () => moveTo(1)}
+          onRestart={() => requestChallengeStart(activeChallengeId)} onCopy={copySummary} onExport={exportEvidence} />;
       }
       default:
         return null;
@@ -625,8 +703,8 @@ export default function App() {
         activeStep={activeStep}
         maxUnlockedStep={maxUnlockedStep}
         onNavigate={navigate}
-        onBrandClick={activeStep > 0 && !draft.completedAt ? requestChallengeExit : goToWorkspaceHome}
-        onExitChallenge={requestChallengeExit}
+        onBrandClick={activeStep > 0 && !draft.completedAt ? requestVoluntaryExit : goToWorkspaceHome}
+        onExitChallenge={requestVoluntaryExit}
         completed={Boolean(draft.completedAt)}
         theme={theme}
         onThemeChange={changeTheme}
@@ -641,9 +719,21 @@ export default function App() {
       <main className={activeStep > 0 ? "page-shell practice-page" : "page-shell"}>
         <div className="page-content">{currentPage()}</div>
       </main>
-      {exitConfirmationOpen && activeStep > 0 && (
+      {startConsentChallengeId && (
+        <ChallengeStartDialog
+          onCancel={cancelChallengeStart}
+          onAccept={() => beginChallenge(startConsentChallengeId)}
+        />
+      )}
+      {violationDeadline !== null && (
         <ExitChallengeDialog
-          onCancel={() => setExitConfirmationOpen(false)}
+          deadline={violationDeadline}
+          onConfirm={confirmChallengeExit}
+        />
+      )}
+      {voluntaryExitOpen && challengeIsActive && (
+        <VoluntaryExitDialog
+          onCancel={cancelVoluntaryExit}
           onConfirm={confirmChallengeExit}
         />
       )}

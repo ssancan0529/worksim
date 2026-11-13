@@ -76,11 +76,16 @@ a { color: inherit; }
 .avatar .icon { font-size: 17px; }
 .mobile-step-nav { display: none; }
 
-.exit-challenge-dialog { width: min(460px, calc(100vw - 32px)); max-width: none; max-height: calc(100vh - 32px); margin: auto; overflow: auto; padding: 24px; border: 1px solid var(--line); border-radius: 14px; background: var(--card); color: var(--text); box-shadow: 0 18px 60px rgb(0 0 0 / 28%); }
-.exit-challenge-dialog::backdrop { background: rgb(8 15 13 / 62%); backdrop-filter: blur(2px); }
+.challenge-policy-dialog, .exit-challenge-dialog { width: min(460px, calc(100vw - 32px)); max-width: none; max-height: calc(100vh - 32px); margin: auto; overflow: auto; padding: 24px; border: 1px solid var(--line); border-radius: 14px; background: var(--card); color: var(--text); box-shadow: 0 18px 60px rgb(0 0 0 / 28%); }
+.challenge-policy-dialog::backdrop, .exit-challenge-dialog::backdrop { background: rgb(8 15 13 / 62%); backdrop-filter: blur(2px); }
 .exit-challenge-icon { display: grid; width: 42px; height: 42px; place-items: center; margin-bottom: 12px; border-radius: 50%; background: var(--danger-soft); color: var(--danger); }
-.exit-challenge-dialog h2 { margin: 0 0 8px; color: var(--text); font-size: 1.25rem; }
-.exit-challenge-dialog p { margin: 0; color: var(--muted); }
+.challenge-policy-dialog h2, .exit-challenge-dialog h2 { margin: 0 0 8px; color: var(--text); font-size: 1.25rem; }
+.challenge-policy-dialog p, .exit-challenge-dialog p { margin: 0; color: var(--muted); }
+.challenge-policy-copy { display: grid; gap: 10px; }
+.challenge-policy-accept { display: flex; align-items: flex-start; gap: 9px; margin-top: 18px; color: var(--text); font-weight: 600; }
+.challenge-policy-accept input { margin-top: 4px; accent-color: var(--primary); }
+.challenge-violation-countdown { margin-top: 14px !important; }
+.challenge-policy-dialog .exit-challenge-actions { justify-content: flex-end; }
 .exit-challenge-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; margin-top: 21px; }
 .exit-challenge-actions .button { min-height: 40px; }
 .exit-challenge-actions .button.exit-challenge-confirm { border-color: var(--danger); background: var(--danger); color: var(--danger-contrast); }

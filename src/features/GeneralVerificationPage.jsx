@@ -14,7 +14,7 @@ const options = [
 ];
 
 export default function GeneralVerificationPage({
-  draft, onObservationChange, onOmissionChange, onBack, onUpdate, onDecisionChange, onFinish,
+  draft, onObservationChange, onOmissionChange, onUpdate, onDecisionChange, onFinish,
 }) {
   const { testing, analysis } = draft;
   const bank = testing.bankMeeting;
@@ -107,7 +107,7 @@ export default function GeneralVerificationPage({
         rationaleLabel="Explica qué mantendrías o corregirías y qué nota respalda tu decisión"
         finishLabel="Entregar y ver retroalimentación"
         notReadyHint="Marca una afirmación del borrador para habilitar la entrega."
-        onChange={onDecisionChange} onFinish={onFinish} onBack={onBack} />
+        onChange={onDecisionChange} onFinish={onFinish} />
     </>
   );
 }

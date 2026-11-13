@@ -4,7 +4,7 @@ import ContentCard from "./ContentCard";
 import Field from "./Field";
 import PageActions from "./PageActions";
 
-export default function ExerciseDecision({ testing, options, onChange, onFinish, onBack, ready, finishLabel = "Guardar y ver informe", notReadyHint, decisionLabel = "¿Qué harías con la propuesta de IA?", rationaleLabel = "Justifica tu decisión con evidencia" }) {
+export default function ExerciseDecision({ testing, options, onChange, onFinish, ready, finishLabel = "Entregar y ver retroalimentación", notReadyHint, decisionLabel = "¿Qué harías con la propuesta de IA?", rationaleLabel = "Justifica tu decisión con evidencia" }) {
   const decisionReady = decisionIsComplete(testing, options.map(([value]) => value));
   return (
     <>
@@ -21,7 +21,6 @@ export default function ExerciseDecision({ testing, options, onChange, onFinish,
           rows={3} required onChange={value => onChange("rationale", value)} />
       </ContentCard>}
       <PageActions>
-        <ActionButton variant="secondary" onClick={onBack}>Volver a desafíos</ActionButton>
         <ActionButton icon="arrow-right" disabled={!ready || !decisionReady}
           onClick={onFinish}>{finishLabel}</ActionButton>
       </PageActions>
