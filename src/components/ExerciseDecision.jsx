@@ -4,7 +4,8 @@ import ContentCard from "./ContentCard";
 import Field from "./Field";
 import PageActions from "./PageActions";
 
-export default function ExerciseDecision({ testing, options, onChange, onFinish, onBack, ready, rationaleLabel = "Justifica tu decisión con evidencia" }) {
+export default function ExerciseDecision({ testing, options, onChange, onFinish, onBack, ready, finishLabel = "Guardar y ver informe", notReadyHint, rationaleLabel = "Justifica tu decisión con evidencia" }) {
+  const decisionReady = decisionIsComplete(testing, options.map(([value]) => value));
   return (
     <>
       {ready && <ContentCard>
@@ -21,9 +22,11 @@ export default function ExerciseDecision({ testing, options, onChange, onFinish,
       </ContentCard>}
       <PageActions>
         <ActionButton variant="secondary" onClick={onBack}>Volver a desafíos</ActionButton>
-        <ActionButton icon="arrow-right" disabled={!ready || !decisionIsComplete(testing, options.map(([value]) => value))}
-          onClick={onFinish}>Guardar y ver informe</ActionButton>
+        <ActionButton icon="arrow-right" disabled={!ready || !decisionReady}
+          onClick={onFinish}>{finishLabel}</ActionButton>
       </PageActions>
+      {notReadyHint && !ready && <p className="validation-hint">{notReadyHint}</p>}
+      {notReadyHint && ready && !decisionReady && <p className="validation-hint">Selecciona una decisión y escribe una justificación breve.</p>}
     </>
   );
 }

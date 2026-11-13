@@ -149,6 +149,7 @@ export default function MayraChallengePage({ step, draft, onUpdate, onBack, onFi
       <ExerciseGuide items={[["SELECT y FROM", "Elige las columnas y la tabla."], ["WHERE", "Combina los filtros con AND."], ["ORDER BY", "Ordena el resultado por la columna indicada."]]} />
       <ContentCard className="exercise-brief">
         <h2>Tu encargo</h2>
+        <p>Eres analista junior del cierre diario. Tesorería recibió un borrador que podría incluir transferencias aún pendientes. Si se comparte así, el equipo puede tomar como liquidados montos que todavía no lo están. Audita la consulta y deja una versión reproducible para la supervisora.</p>
         <p>Lista las transferencias confirmadas de Guayaquil de $100 o más. Devuelve las columnas de la muestra y ordena por ID ascendente.</p>
         <ExerciseTable columns={columns} rows={TRANSACTIONS} caption="Tabla transacciones" collapsible />
       </ContentCard>

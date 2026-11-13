@@ -26,7 +26,12 @@ export default function TestingPage({ testing, onChange, onRun, onBack, onContin
     <>
       <PageIntro eyebrow={bank ? "BANCO HORIZONTE · PYTHON" : "ADOPTA+ · PYTHON"} title="Un problema en producción"
         description={bank ? "Investiga por qué desaparecen operaciones al cambiar de página en el listado interno." : "Implementa el listado de mascotas y comprueba el resultado antes de contrastarlo con la IA."} />
-      <ExerciseGuide items={[["filter", "Aplica las condiciones al conjunto de mascotas."], ["order_by", "Define el orden de prioridad y cómo resolver empates."], ["offset y limit", "Seleccionan qué página devolver."]]} />
+      <ExerciseGuide items={[["filter", "Aplica las condiciones al conjunto de registros."], ["order_by", "Define el orden del listado y cómo resolver empates."], ["offset y limit", "Seleccionan qué página devolver."]]} />
+      {bank && <ContentCard>
+        <h2>Incidente del cierre de Operaciones</h2>
+        <p>En Banco Horizonte, el equipo que concilia transferencias y retiros reportó que algunas operaciones del mismo día desaparecen al pasar de página. El listado se usa para buscar movimientos pendientes y decidir qué investigar durante el cierre.</p>
+        <p>Como desarrollador junior de guardia, entrega una corrección y una prueba que permita a otra persona reproducir el fallo y verificar que dos páginas consecutivas conservan todos los registros en su orden.</p>
+      </ContentCard>}
       {bank && <ContentCard>
         <Field id="bank-plan" label="Tu estrategia inicial: explica filtros, orden, paginación y una prueba"
           value={testing.plan || ""} rows={3} disabled={busy} onChange={value => onChange("plan", value)} />

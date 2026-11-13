@@ -23,9 +23,12 @@ test('accepted identical project submissions do not count again after reload or 
   assert.equal(isNewAcceptedSubmission(project,{...restored,answers:{0:'Nueva explicación'}},{passed:true}),true);
 });
 
-test('general challenge requires review, own attempt and decision but accepts incorrect classifications', () => {
-  const draft={kind:'general',started:true,analysis:{approach:'Mi resumen'},investigation:{reviewed:true},testing:{ran:true,results:[{passed:false}],verdict:'modify',rationale:'Corregir afirmaciones sin respaldo'}};
-  assert.equal(canCompleteChallenge(draft),true);
-  assert.equal(canCompleteChallenge({...draft,testing:{...draft.testing,ran:false}}),false);
-  assert.equal(canCompleteChallenge({...draft,analysis:{approach:''}}),false);
+test('communication accepts a partial attempt and requires a decision and justification', () => {
+  const draft = {kind:'general', started:true, analysis:{approach:'Mi resumen'},
+    testing:{bankMeeting:true, ran:false, verdict:'modify', rationale:'La fecha sigue pendiente.'}};
+  assert.equal(canCompleteChallenge(draft), true);
+  assert.equal(canCompleteChallenge({...draft, analysis:{approach:''}}), false);
+  assert.equal(canCompleteChallenge({...draft, analysis:{approach:''},
+    testing:{...draft.testing, observations:[{classification:'supported'}]}}), true);
+  assert.equal(canCompleteChallenge({...draft, testing:{...draft.testing, rationale:' '}}), false);
 });

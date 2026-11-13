@@ -1,3 +1,4 @@
+import { hasCommunicationAttempt } from "../lib/completion";
 import ActionButton from "../components/ActionButton";
 import ReviewPrompt from "../components/ReviewPrompt";
 import ContentCard from "../components/ContentCard";
@@ -27,10 +28,7 @@ export default function GeneralVerificationPage({
   const observations = new Map(
     testing.observations.map((observation) => [observation.claimId, observation]),
   );
-  const ready = Boolean((bank || analysis.approach.trim()) && (
-    [...observations.values()].some(observation => observation.classification || observation.evidence.trim())
-    || testing.omission.trim() || testing.omittedSources?.length || [...observations.values()].some(observation => observation.sourceId)
-  ));
+  const ready = hasCommunicationAttempt(draft);
 
   return (
     <>
@@ -39,7 +37,10 @@ export default function GeneralVerificationPage({
       <div className="exercise-workbench">
         <ContentCard className="exercise-source">
           <h2>Tu encargo</h2>
-          <p>Lee las notas y resume los acuerdos, responsables y condiciones pendientes del piloto.</p>
+          <p>{bank
+            ? "Eres analista junior de Comunicación Interna. Dirección necesita decidir hoy si anuncia el piloto de transferencias digitales. Un resumen con fechas o responsables sin confirmar podría activar avisos a clientes antes de que el equipo esté listo."
+            : "Eres parte del equipo que prepara el piloto. La persona que coordina el proyecto necesita una actualización breve para decidir qué puede comunicar y qué sigue pendiente."}</p>
+          <p>Entrega un resumen que separe acuerdos, responsables y condiciones pendientes. Usa las notas como evidencia.</p>
           <ol className="exercise-notes">{notes.map(line => <li key={line}>{line}</li>)}</ol>
         </ContentCard>
         <ContentCard>
@@ -50,6 +51,7 @@ export default function GeneralVerificationPage({
               analysis: { ...current.analysis, approach },
               testing: { ...current.testing, ran: false, results: [], verdict: "", rationale: "" },
             }))} />
+          {ready && <p><a href="#communication-delivery">Ir a la entrega</a></p>}
           <details className="exercise-hint"><summary>Ver pista</summary><p>Comprueba qué debe ocurrir antes de confirmar el piloto.</p></details>
         </ContentCard>
       </div>
@@ -59,7 +61,7 @@ export default function GeneralVerificationPage({
           <li key={check.id}><div><strong>{check.name}</strong>{bank ? <span className={`criterion-status ${check.passed ? "meets" : "review"}`}>{check.status}</span> : check.observed ? <CriterionStatus passed={check.passed} /> : <span className="criterion-status review">Sin respuesta</span>}</div>
             {!bank && check.explanation && <details><summary>Ver evidencia</summary><p>{check.explanation}</p><p>{check.source}</p></details>}
           </li>
-        ))}</ul> : <p className="muted">Compara el resumen con las notas y comprueba tu revisión.</p>}
+        ))}</ul> : <p className="muted">Puedes comprobar tus observaciones ahora o recibir la retroalimentación al entregar.</p>}
       </ContentCard>
       <ContentCard className="exercise-comparison">
         <h2>Compara con la IA</h2>
@@ -145,19 +147,24 @@ export default function GeneralVerificationPage({
       {!ready && <p className="validation-hint">Registra al menos una observación o un dato omitido. Puedes dejar los demás campos pendientes.</p>}
         </>}
       </ContentCard>
-      {bank && testing.ran && <ContentCard>
+      {bank && (testing.ran || investigation.reviewed) && <ContentCard>
         <ReviewPrompt question={pending?.observed
           ? "¿La nota que elegiste prueba la afirmación o solo menciona el mismo tema?"
           : "¿Qué decisión puede tomar Dirección con la evidencia disponible?"}
           hint="Separa los acuerdos confirmados de las condiciones pendientes para aprobar el piloto." />
-        <Field id="executive-summary" label="Versión revisada para Dirección" rows={4}
+        <Field id="executive-summary" label="Versión revisada para Dirección (opcional)" rows={4}
           value={testing.executiveSummary || ""} onChange={value => onDecisionChange("executiveSummary", value)} />
-        <Field id="executive-objection" label="Si Dirección pregunta si el piloto puede anunciarse hoy, ¿qué responderías y con qué evidencia?"
+        <Field id="executive-objection" label="Si Dirección pregunta si el piloto puede anunciarse hoy, ¿qué responderías y con qué evidencia? (opcional)"
           rows={3} value={testing.objection || ""} onChange={value => onDecisionChange("objection", value)} />
         <p className="field-hint">La claridad del resumen y la respuesta quedan para revisión cualitativa.</p>
       </ContentCard>}
-      <ExerciseDecision testing={testing} ready={testing.ran && (!bank || Boolean(testing.executiveSummary?.trim() && testing.objection?.trim()))} onChange={onDecisionChange}
-        onFinish={onFinish} onBack={onBack} options={[["accept", "Aceptar"], ["modify", "Modificar"], ["reject_summary", "Rechazar"]]} />
+      <section id="communication-delivery">
+        <h2>Entrega tu actividad</h2>
+        <p>Entrega tu resumen o una revisión parcial. Selecciona qué harías con el informe y explica por qué.</p>
+        <ExerciseDecision testing={testing} ready={ready} onChange={onDecisionChange}
+          finishLabel="Entregar y ver informe" notReadyHint="Escribe tu resumen o registra una observación para habilitar la entrega."
+          onFinish={onFinish} onBack={onBack} options={[["accept", "Enviar el informe"], ["modify", "Corregir antes de enviar"], ["reject_summary", "Solicitar una nueva versión"]]} />
+      </section>
     </>
   );
 }

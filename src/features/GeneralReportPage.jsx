@@ -23,6 +23,7 @@ export default function GeneralReportPage({
   onReflectionChange,
   onBack,
   onRestart,
+  onHome,
   onCopy,
   onExport,
 }) {
@@ -134,10 +135,11 @@ export default function GeneralReportPage({
       <p className="small-note general-report-note">WORKSIM evalúa el proceso con resultados simulados; no asigna una calificación ni certifica competencias.</p>
 
       <PageActions className="report-actions">
-        <ActionButton variant="secondary" onClick={onBack} icon="arrow-left" iconPosition="left">Volver al ejercicio</ActionButton>
+        {onBack && <ActionButton variant="secondary" onClick={onBack} icon="arrow-left" iconPosition="left">Volver al ejercicio</ActionButton>}
         <ActionButton variant="secondary" onClick={onCopy} icon="copy">Copiar resumen</ActionButton>
         <ActionButton variant="secondary" onClick={onExport} icon="download">Descargar evidencia JSON</ActionButton>
-        <ActionButton onClick={onRestart} icon="arrow-right">Volver a Desafíos</ActionButton>
+        <ActionButton variant="secondary" onClick={onHome}>Volver a desafíos</ActionButton>
+        {draft.completedAt && <ActionButton onClick={onRestart} icon="reset">Practicar nuevamente</ActionButton>}
       </PageActions>
     </>
   );
